@@ -50,7 +50,7 @@ const SignUpScreen = ({ navigation }) => {
                             <View style={styles.logoSquare}>
                                 <Ionicons name="heart" size={28} color="white" />
                             </View>
-                            <Text style={styles.logoText}>LoveWise</Text>
+                            <Text style={styles.logoText}>Datingadvice</Text>
                         </View>
                         <Text style={styles.title}>Create Account</Text>
                         <Text style={styles.subtitle}>Join our community of heart-seekers</Text>

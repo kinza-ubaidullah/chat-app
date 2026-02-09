@@ -19,7 +19,10 @@ const HomeScreen = ({ navigation }) => {
 
                 {/* Grid Stats */}
                 <View style={styles.gridContainer}>
-                    <TouchableOpacity style={styles.card}>
+                    <TouchableOpacity
+                        style={styles.card}
+                        onPress={() => navigation.navigate('Subscription')}
+                    >
                         <View style={[styles.iconCircle, { backgroundColor: '#FDF1F3' }]}>
                             <Ionicons name="card" size={20} color={Colors.primary} />
                         </View>

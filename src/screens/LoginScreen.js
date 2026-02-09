@@ -36,7 +36,7 @@ const LoginScreen = ({ navigation }) => {
                             <View style={styles.logoSquare}>
                                 <Ionicons name="heart" size={28} color="white" />
                             </View>
-                            <Text style={styles.logoText}>LoveWise</Text>
+                            <Text style={styles.logoText}>Datingadvice</Text>
                         </View>
                         <Text style={styles.title}>Welcome back</Text>
                         <Text style={styles.subtitle}>Sign in to continue your journey</Text>

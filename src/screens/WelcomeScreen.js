@@ -35,7 +35,7 @@ const WelcomeScreen = ({ navigation }) => {
                     </View>
                 </View>
 
-                <Text style={styles.title}>LoveWise</Text>
+                <Text style={styles.title}>Datingadvice</Text>
 
                 <View style={styles.subtitleContainer}>
                     <Ionicons name="sparkles-outline" size={16} color={Colors.primary} />

@@ -5,7 +5,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from './src/theme/colors';
-import { Platform, View, StyleSheet, Text } from 'react-native';
+import { Platform, View, StyleSheet } from 'react-native';
 
 // Screens
 import WelcomeScreen from './src/screens/WelcomeScreen';
@@ -18,19 +18,31 @@ import ChatListScreen from './src/screens/ChatListScreen';
 import ChatDetailScreen from './src/screens/ChatDetailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import SubscriptionScreen from './src/screens/SubscriptionScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
-  console.log('MainTabs rendering');
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: '#ADAFBB',
-        tabBarStyle: { height: 65, paddingBottom: 5 }
+        tabBarStyle: {
+          height: Platform.OS === 'ios' ? 85 : 65,
+          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+          paddingTop: 10,
+          backgroundColor: Colors.white,
+          borderTopWidth: 1,
+          borderTopColor: '#F0F0F0',
+          elevation: 5,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+        }
       }}
     >
       <Tab.Screen
@@ -69,14 +81,23 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+            animation: 'slide_from_right'
+          }}
+        >
+          {/* Auth Flow */}
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
-          <Stack.Screen name="Main" component={MainTabs} />
-          <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+
+          {/* App Flow */}
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+          <Stack.Screen name="Subscription" component={SubscriptionScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

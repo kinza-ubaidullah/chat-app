@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "LoveWise",
-    "slug": "lovewise",
+    "name": "Datingadvice",
+    "slug": "datingadvice",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,6 +16,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.lovewise.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

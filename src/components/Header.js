@@ -11,7 +11,7 @@ const Header = ({ showLogout = true, onLogout }) => {
                     <Ionicons name="heart" size={24} color="white" />
                 </View>
                 <View style={styles.titleContainer}>
-                    <Text style={styles.logoText}>LoveWise</Text>
+                    <Text style={styles.logoText}>Datingadvice</Text>
                     <Text style={styles.welcomeText}>Welcome back!</Text>
                 </View>
             </View>
