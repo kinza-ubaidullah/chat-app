@@ -432,7 +432,7 @@ const styles = StyleSheet.create({
     headerTitle: {
         fontSize: 10,
         fontWeight: '900',
-        color: 'rgba(255,255,255,0.4)',
+        color: 'rgba(255,255,255,0.7)', // Increased visibility
         textTransform: 'uppercase',
         letterSpacing: 1,
     },
@@ -500,9 +500,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 15,
-        backgroundColor: '#FDFCFB',
-        borderTopWidth: 1,
-        borderTopColor: '#F0F0F0',
+        backgroundColor: '#FFF',
+        borderTopWidth: 1.5,
+        borderTopColor: '#E8E6EA', // Visible border
+        paddingBottom: Platform.OS === 'ios' ? 30 : 15, // Safe area space
     },
     micBtn: {
         marginRight: 10,
@@ -511,17 +512,16 @@ const styles = StyleSheet.create({
         flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: Colors.white,
+        backgroundColor: '#F7F7F7',
         borderRadius: 25,
-        borderWidth: 0,
-        borderColor: 'transparent',
         paddingHorizontal: 15,
         height: 50,
-        // Removed shadow/elevation to prevent unwanted borders
+        borderWidth: 1,
+        borderColor: '#E8E6EA',
     },
     input: {
         flex: 1,
-        fontSize: 14,
+        fontSize: 15,
         color: '#121E39',
     },
     sendBtn: {

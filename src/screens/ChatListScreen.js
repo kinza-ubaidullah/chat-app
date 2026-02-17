@@ -66,7 +66,7 @@ const ChatListScreen = ({ navigation }) => {
     };
 
     return (
-        <ScreenWrapper>
+        <ScreenWrapper useBottomInset={true}>
             <Header onLogout={handleLogout} />
             <View style={styles.container}>
                 <View style={styles.listHeader}>

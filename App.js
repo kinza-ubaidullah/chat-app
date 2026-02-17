@@ -1,4 +1,4 @@
-import { Platform, View, ActivityIndicator, Text } from 'react-native';
+import { Platform, View, Text, StatusBar } from 'react-native';
 if (Platform.OS !== 'web') {
   require('react-native-url-polyfill/auto');
 }
@@ -32,6 +32,7 @@ import ContactScreen from './src/screens/ContactScreen';
 import BlogsScreen from './src/screens/BlogsScreen';
 import BlogPostScreen from './src/screens/BlogPostScreen';
 import SuccessStoriesScreen from './src/screens/SuccessStoriesScreen';
+import LoadingScreen from './src/screens/LoadingScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -44,17 +45,17 @@ function MainTabs() {
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: '#ADAFBB',
         tabBarStyle: {
-          height: Platform.OS === 'ios' ? 85 : 65,
-          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
+          height: Platform.OS === 'ios' ? 90 : 70,
+          paddingBottom: Platform.OS === 'ios' ? 35 : 15,
           paddingTop: 10,
           backgroundColor: Colors.white,
-          borderTopWidth: 1,
+          borderTopWidth: 1.5,
           borderTopColor: '#F0F0F0',
-          elevation: 5,
+          elevation: 10,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.05,
-          shadowRadius: 10,
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.1,
+          shadowRadius: 12,
         }
       }}
     >
@@ -120,15 +121,12 @@ export default function App() {
   }, []);
 
   if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.white }}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-      </View>
-    );
+    return <LoadingScreen message="Initializing session..." />;
   }
 
   return (
     <SafeAreaProvider>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFF" translucent={false} />
       <NavigationContainer>
         <Stack.Navigator
           screenOptions={{

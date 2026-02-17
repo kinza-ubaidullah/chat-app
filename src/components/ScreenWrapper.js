@@ -1,14 +1,24 @@
 import React from 'react';
-import { StyleSheet, View, SafeAreaView } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Colors } from '../theme/colors';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const ScreenWrapper = ({ children, style }) => {
+const ScreenWrapper = ({ children, style, useBottomInset = false }) => {
+    const insets = useSafeAreaInsets();
+
     return (
-        <SafeAreaView style={[styles.container, style]}>
+        <View style={[
+            styles.container,
+            {
+                paddingTop: insets.top,
+                paddingBottom: useBottomInset ? insets.bottom : 0
+            },
+            style
+        ]}>
             <View style={styles.inner}>
                 {children}
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 

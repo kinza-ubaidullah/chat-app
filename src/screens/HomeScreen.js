@@ -8,7 +8,6 @@ import Header from '../components/Header';
 import { supabase } from '../lib/supabase';
 import OnboardingModal from '../components/OnboardingModal';
 import AnalysisResultModal from '../components/AnalysisResultModal';
-import TopicSelectionModal from '../components/TopicSelectionModal';
 import VoiceCallModal from '../components/VoiceCallModal';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,11 +18,11 @@ const HomeScreen = ({ navigation }) => {
     const [loading, setLoading] = useState(true);
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [showAnalysisResult, setShowAnalysisResult] = useState(false);
-    const [showTopicSelectionModal, setShowTopicSelectionModal] = useState(false);
     const [showVoiceModal, setShowVoiceModal] = useState(false);
     const [selectedAdvisorForVoice, setSelectedAdvisorForVoice] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [usage, setUsage] = useState(null);
+    const [analysisError, setAnalysisError] = useState(false);
     const welcomeEmailTriggered = React.useRef(false);
 
     useEffect(() => {
@@ -88,18 +87,23 @@ const HomeScreen = ({ navigation }) => {
             if (pending === 'true' && authUser) {
                 console.log('Polling for analysis...');
                 const { data: newProfile } = await supabase.from('profiles').select('*').eq('id', authUser.id).single();
+
                 if (newProfile && newProfile.persona_analysis && Object.keys(newProfile.persona_analysis).length > 0) {
                     console.log('Analysis ready!');
-                    const pending = await AsyncStorage.getItem('discovery_pending');
-                    if (pending === 'true') {
-                        await AsyncStorage.setItem('should_auto_chat', 'true');
-                        await AsyncStorage.removeItem('discovery_pending');
-                    }
+                    await AsyncStorage.setItem('should_auto_chat', 'true');
+                    await AsyncStorage.removeItem('discovery_pending');
                     setUser(prev => ({ ...prev, profile: newProfile }));
                     setIsAnalyzing(false);
+                    setAnalysisError(false);
+                } else {
+                    // Check if it's been too long (e.g., 2 mins)
+                    const startTime = await AsyncStorage.getItem('discovery_start_time');
+                    if (startTime && (Date.now() - parseInt(startTime)) > 120000) {
+                        setAnalysisError(true);
+                    }
                 }
             }
-        }, 5000); // 5 sec fallback
+        }, 3000); // Polling faster for better UX
 
         return () => {
             if (channel) supabase.removeChannel(channel);
@@ -220,41 +224,7 @@ const HomeScreen = ({ navigation }) => {
         fetchData();
     };
 
-    const handleTopicSelect = (topicId) => {
-        setShowTopicSelectionModal(false);
-
-        // --- ENHANCED: Pick advisor based on analysis ---
-        let selectedAdvisor = null;
-        if (user?.profile?.persona_analysis?.recommended_advisors?.length > 0) {
-            const recommendedName = user.profile.persona_analysis.recommended_advisors[0];
-            selectedAdvisor = advisors.find(a => a.name === recommendedName);
-        }
-
-        const advisor = selectedAdvisor || advisors.find(a => a.name === 'Maya') || advisors[0];
-
-        if (advisor) {
-            // Map topic ID to a friendly initial message context
-            const topicMap = {
-                'opener': 'I need help writing a great opener.',
-                'reply': 'I need help with a reply to a message.',
-                'ask_out': 'I want to ask someone out but dont know how.',
-                'profile_review': 'Can you review my dating profile?',
-                'flirty': 'I want to be more flirty in my messages.',
-                'general': 'I just want some general dating advice.'
-            };
-
-            navigation.navigate('ChatDetail', {
-                name: advisor.name,
-                id: advisor.id,
-                image_url: advisor.image_url,
-                specialty: advisor.specialty,
-                initialContext: topicMap[topicId] || ''
-            });
-        } else {
-            // Backup: just go to home or show error
-            Alert.alert('Advisor', 'Finding the perfect advisor for you...');
-        }
-    };
+    // Removed handleTopicSelect as it is no longer needed
 
     // --- AUTO-NAVIGATION (Website Pattern) ---
     useEffect(() => {
@@ -264,10 +234,10 @@ const HomeScreen = ({ navigation }) => {
             // 0. If onboarding is NOT completed, show the modal immediately
             if (!user.profile.onboarding_completed_at) {
                 setShowOnboarding(true);
-                return; // Don't proceed to auto-navigate to Discovery if they haven't agreed to rules
+                return;
             }
 
-            // 1. If rules are done but analysis is missing, go to Discovery
+            // ✨ REVERTED: Skip manual topic selection, go to Discovery if analysis missing
             if (user.profile.onboarding_completed_at && !hasAnalysis) {
                 AsyncStorage.getItem('discovery_pending').then(pending => {
                     if (pending !== 'true') {
@@ -276,24 +246,24 @@ const HomeScreen = ({ navigation }) => {
                 });
             }
 
-            // 2. ✨ NEW: If analysis just finished, auto-open chat with recommended advisor
+            // 2. ✨ AUTO-OPEN CHAT: When analysis finishes, go straight to recommended advisor
             if (hasAnalysis && !isAnalyzing && advisors.length > 0) {
                 AsyncStorage.getItem('should_auto_chat').then(shouldAuto => {
                     if (shouldAuto === 'true') {
                         const recommendedName = user.profile.persona_analysis.recommended_advisors?.[0];
-                        const advisor = advisors.find(a => a.name === recommendedName) || advisors.find(a => a.name === 'Maya') || advisors[0];
+                        const advisor = advisors.find(a =>
+                            recommendedName && (recommendedName.toLowerCase().includes(a.name.toLowerCase()) || a.name.toLowerCase().includes(recommendedName.toLowerCase()))
+                        ) || advisors.find(a => a.name === 'Maya') || advisors[0];
 
                         if (advisor) {
-                            // Only remove flag after we are sure we can navigate
                             AsyncStorage.removeItem('should_auto_chat');
-                            console.log('Auto-navigating to chat with advisor:', advisor.name);
-
+                            console.log('Opening chat with recommended advisor:', advisor.name);
                             navigation.navigate('ChatDetail', {
                                 name: advisor.name,
                                 id: advisor.id,
                                 image_url: advisor.image_url,
                                 specialty: advisor.specialty,
-                                initialContext: "I've just completed my profile analysis. What are your first impressions?"
+                                initialContext: "I've just completed my persona discovery. I'm ready for your advice!"
                             });
                         }
                     }
@@ -359,7 +329,7 @@ const HomeScreen = ({ navigation }) => {
     };
 
     return (
-        <ScreenWrapper>
+        <ScreenWrapper useBottomInset={true}>
             <Header onLogout={handleLogout} />
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
                 {/* Welcome Banner */}
@@ -374,48 +344,56 @@ const HomeScreen = ({ navigation }) => {
                 {/* Analysis CTA (Always visible) */}
                 <TouchableOpacity
                     style={styles.analysisCard}
-                    onPress={() => {
+                    onPress={async () => {
                         const hasAnalysis = user?.profile?.persona_analysis && Object.keys(user.profile.persona_analysis).length > 0;
                         if (hasAnalysis) {
                             setShowAnalysisResult(true);
-                        } else if (!isAnalyzing) {
+                        } else if (isAnalyzing) {
+                            // If stuck, allow manual refresh
+                            fetchData();
+                        } else {
                             navigation.navigate('Discovery');
                         }
                     }}
                     activeOpacity={0.9}
-                    disabled={isAnalyzing}
                 >
                     <LinearGradient
-                        colors={['#12172D', '#2D3455']}
+                        colors={analysisError ? ['#4A1212', '#2D1212'] : ['#12172D', '#2D3455']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.analysisGradient}
                     >
                         <View style={styles.analysisContent}>
                             <View style={styles.analysisIcon}>
-                                {isAnalyzing ? (
+                                {isAnalyzing && !analysisError ? (
                                     <ActivityIndicator size="small" color="#FFF" />
+                                ) : analysisError ? (
+                                    <Ionicons name="alert-circle" size={24} color="#FFF" />
                                 ) : (
                                     <Ionicons name="sparkles" size={24} color="#FFF" />
                                 )}
                             </View>
                             <View style={{ flex: 1 }}>
                                 <Text style={styles.analysisTitle}>
-                                    {isAnalyzing
+                                    {isAnalyzing && !analysisError
                                         ? "Analysing your persona..."
-                                        : (!user?.profile?.persona_analysis || Object.keys(user?.profile?.persona_analysis || {}).length === 0)
-                                            ? "Unlock Your Dating Persona"
-                                            : "View Your Dating Persona"}
+                                        : analysisError
+                                            ? "Analysis is taking longer than usual"
+                                            : (!user?.profile?.persona_analysis || Object.keys(user?.profile?.persona_analysis || {}).length === 0)
+                                                ? "Unlock Your Dating Persona"
+                                                : "View Your Dating Persona"}
                                 </Text>
                                 <Text style={styles.analysisSubtitle}>
-                                    {isAnalyzing
-                                        ? "Our AI is busy crunching the numbers. This usually takes less than a minute."
-                                        : (!user?.profile?.persona_analysis || Object.keys(user?.profile?.persona_analysis || {}).length === 0)
-                                            ? "Take a quick analysis to get personalized advice tailored to your style."
-                                            : "See your AI-generated insights and recommended dating strategy."}
+                                    {isAnalyzing && !analysisError
+                                        ? "Our AI is busy crunching the numbers. Please wait a moment."
+                                        : analysisError
+                                            ? "Tap here to refresh or try again later. Your data is safe."
+                                            : (!user?.profile?.persona_analysis || Object.keys(user?.profile?.persona_analysis || {}).length === 0)
+                                                ? "Take a quick analysis to get personalized advice tailored to your style."
+                                                : "See your AI-generated insights and recommended dating strategy."}
                                 </Text>
                             </View>
-                            {!isAnalyzing && <Ionicons name="arrow-forward" size={24} color="#FFF" />}
+                            {!isAnalyzing || analysisError ? <Ionicons name={analysisError ? "refresh" : "arrow-forward"} size={24} color="#FFF" /> : null}
                         </View>
                     </LinearGradient>
                 </TouchableOpacity>
@@ -507,7 +485,7 @@ const HomeScreen = ({ navigation }) => {
                     ))
                 )}
 
-                <View style={{ height: 100 }} />
+                <View style={{ height: 120 }} />
             </ScrollView>
 
             {/* Modals */}
@@ -523,12 +501,6 @@ const HomeScreen = ({ navigation }) => {
                 analysis={user?.profile?.persona_analysis}
                 allAdvisors={advisors}
                 onAdvisorSelect={handleAdvisorSelectByName}
-            />
-
-            <TopicSelectionModal
-                visible={showTopicSelectionModal}
-                onClose={() => setShowTopicSelectionModal(false)}
-                onSelectTopic={handleTopicSelect}
             />
 
             <VoiceCallModal

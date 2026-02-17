@@ -135,7 +135,7 @@ const ProfileScreen = ({ navigation }) => {
     };
 
     return (
-        <ScreenWrapper>
+        <ScreenWrapper useBottomInset={true}>
             <Header onLogout={handleLogout} />
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
                 <View style={styles.profileHeader}>

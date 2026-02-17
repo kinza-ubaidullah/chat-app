@@ -5,6 +5,7 @@ import { Colors } from '../theme/colors';
 import { supabase } from '../lib/supabase';
 import ScreenWrapper from '../components/ScreenWrapper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
@@ -91,6 +92,7 @@ const DiscoveryScreen = ({ navigation, route }) => {
 
             // 1. Mark discovery as pending locally for Home screen state
             await AsyncStorage.setItem('discovery_pending', 'true');
+            await AsyncStorage.setItem('discovery_start_time', Date.now().toString());
 
             // 2. Fetch Discovery Webhook from settings
             const { data: setting } = await supabase
@@ -100,26 +102,67 @@ const DiscoveryScreen = ({ navigation, route }) => {
                 .maybeSingle();
 
             if (setting?.key_value) {
-                // Match Website's exact payload: { userId, answers }
-                fetch(setting.key_value, {
+                // Trigger Webhook
+                await fetch(setting.key_value, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        userId: session.user.id,
-                        answers: finalAnswers
-                    })
-                }).catch(e => console.log('Webhook call failed (non-blocking):', e));
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: session.user.id, answers: finalAnswers })
+                }).catch(e => console.log('Webhook call failed:', e));
 
-                // 3. Navigate back to Home and let it handle the "Analysing" state
-                navigation.reset({
-                    index: 0,
-                    routes: [{ name: 'Main' }]
-                });
+                // 3. WAIT FOR ANALYSIS (Direct Flow)
+                // Instead of going back to Home, we poll right here to provide a "Direct" experience
+                let attempts = 0;
+                const maxAttempts = 15; // 30 seconds total
+
+                const checkStatus = async () => {
+                    if (attempts >= maxAttempts) {
+                        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+                        return;
+                    }
+
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('persona_analysis')
+                        .eq('id', session.user.id)
+                        .single();
+
+                    if (profile?.persona_analysis && Object.keys(profile.persona_analysis).length > 0) {
+                        // Analysis found! Get Advisors and Navigate
+                        const { data: advisors } = await supabase.from('advisors').select('*').limit(10);
+                        const recommendedName = profile.persona_analysis.recommended_advisors?.[0];
+
+                        const advisor = advisors?.find(a =>
+                            recommendedName && (recommendedName.toLowerCase().includes(a.name.toLowerCase()) || a.name.toLowerCase().includes(recommendedName.toLowerCase()))
+                        ) || advisors?.[0];
+
+                        if (advisor) {
+                            navigation.reset({
+                                index: 0,
+                                routes: [
+                                    { name: 'Main' },
+                                    {
+                                        name: 'ChatDetail',
+                                        params: {
+                                            name: advisor.name,
+                                            id: advisor.id,
+                                            image_url: advisor.image_url,
+                                            specialty: advisor.specialty,
+                                            initialContext: "I've just completed my profile discovery. I'm ready for your advice!"
+                                        }
+                                    }
+                                ]
+                            });
+                        } else {
+                            navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+                        }
+                    } else {
+                        attempts++;
+                        setTimeout(checkStatus, 2000);
+                    }
+                };
+
+                checkStatus();
             } else {
-                // No webhook configured, just go home
                 navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
             }
 
@@ -127,7 +170,8 @@ const DiscoveryScreen = ({ navigation, route }) => {
             console.error('Submit error:', err);
             navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
         } finally {
-            setIsSubmitting(false);
+            // We don't set isSubmitting(false) immediately if we are polling
+            // so the overlay stays visible.
         }
     };
 

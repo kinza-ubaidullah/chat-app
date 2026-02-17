@@ -22,7 +22,7 @@ const SettingsScreen = ({ navigation }) => {
     ];
 
     return (
-        <ScreenWrapper>
+        <ScreenWrapper useBottomInset={true}>
             <Header onLogout={handleLogout} />
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <Text style={styles.title}>Settings</Text>
