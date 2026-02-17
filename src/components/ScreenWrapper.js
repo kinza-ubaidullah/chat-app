@@ -4,20 +4,29 @@ import { Colors } from '../theme/colors';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ScreenWrapper = ({ children, style, useBottomInset = false }) => {
-    const insets = useSafeAreaInsets();
+    let insets;
+    try {
+        insets = useSafeAreaInsets();
+    } catch (err) {
+        insets = { top: 0, bottom: 0, left: 0, right: 0 };
+    }
+
+    // Safety check for web and cases where provider might be missing
+    const safeInsets = insets || { top: 0, bottom: 0, left: 0, right: 0 };
 
     return (
         <View style={[
             styles.container,
             {
-                paddingTop: insets.top,
-                paddingBottom: useBottomInset ? insets.bottom : 0
+                paddingTop: safeInsets.top || 0,
+                paddingBottom: useBottomInset ? (safeInsets.bottom || 0) : 0,
+                minHeight: '100%', // Force visibility on web
+                width: '100%',
+                backgroundColor: Colors.background || '#FDFCFB'
             },
             style
         ]}>
-            <View style={styles.inner}>
-                {children}
-            </View>
+            {children}
         </View>
     );
 };

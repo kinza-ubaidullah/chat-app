@@ -5,7 +5,14 @@ import { Colors } from '../theme/colors';
 import { supabase } from '../lib/supabase';
 
 // Conditional import for native-only Vapi SDK
-const Vapi = Platform.OS !== 'web' ? require('@vapi-ai/react-native').default : null;
+let Vapi = null;
+try {
+    if (Platform.OS !== 'web') {
+        Vapi = require('@vapi-ai/react-native').default;
+    }
+} catch (e) {
+    console.log('Vapi module failed to load:', e);
+}
 
 const VoiceCallModal = ({ visible, onClose, advisor, userId }) => {
     const [status, setStatus] = useState('ready'); // ready, connecting, active, ended

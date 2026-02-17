@@ -186,7 +186,7 @@ const ProfileScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.infoSection}>
-                    {user?.profile?.persona_analysis && Object.keys(user.profile.persona_analysis).length > 0 && (
+                    {user?.profile?.persona_analysis && Object.keys(user.profile.persona_analysis || {}).length > 0 && (
                         <TouchableOpacity
                             style={[styles.infoCard, { backgroundColor: '#12172D', borderColor: '#12172D' }]}
                             onPress={() => navigation.navigate('Main', { screen: 'Home', params: { showAnalysis: true } })}

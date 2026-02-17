@@ -26,7 +26,8 @@ const HomeScreen = ({ navigation }) => {
     const welcomeEmailTriggered = React.useRef(false);
 
     useEffect(() => {
-        if (navigation.getState()?.routes.find(r => r.name === 'Home')?.params?.showAnalysis) {
+        const routes = navigation.getState()?.routes;
+        if (routes && routes.find(r => r.name === 'Home')?.params?.showAnalysis) {
             setShowAnalysisResult(true);
         }
     }, [navigation.getState()?.routes]);
@@ -112,104 +113,74 @@ const HomeScreen = ({ navigation }) => {
     }, []);
 
     const fetchData = async () => {
-        setLoading(true);
-        const { data: { user: authUser } } = await supabase.auth.getUser();
+        try {
+            setLoading(true);
+            const { data: userData, error: userError } = await supabase.auth.getUser();
+            const authUser = userData?.user;
 
-        if (authUser) {
-            // Sequential fetches for clarity and to handle potential missing usage records
-            const [profileRes, usageRes, advisorsRes] = await Promise.all([
-                supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle(),
-                supabase.from('user_usage').select('*').eq('user_id', authUser.id).maybeSingle(),
-                supabase.from('advisors').select('*').order('id', { ascending: true })
-            ]);
+            if (userError) throw userError;
 
-            const profileData = profileRes.data;
-            const profileError = profileRes.error;
-            const usageData = usageRes.data;
-
-            if (profileError || !profileData) {
-                setUser(authUser);
-                setShowOnboarding(true);
-            } else {
-                const updatedUser = { ...authUser, profile: profileData };
-                setUser(updatedUser);
-                setUsage(usageData);
-
-                // --- WELCOME EMAIL TRIGGER (Website Logic) ---
-                if (profileData.welcome_email_sent === false && !welcomeEmailTriggered.current) {
-                    welcomeEmailTriggered.current = true;
-                    // Attempt to trigger welcome email (silently)
-                    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
-                    fetch(`${apiUrl}/api/notifications/welcome`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            email: authUser.email,
-                            name: profileData.full_name || authUser.user_metadata?.full_name,
-                            userId: authUser.id
-                        })
-                    }).catch(e => console.log('Email trigger failed (expected in local dev):', e));
-                }
-
-                // --- ONBOARDING AUTO-TRIGGER ---
-                if (!profileData.onboarding_completed_at) {
-                    setShowOnboarding(true);
-                }
-
-                if (profileData.persona_analysis && Object.keys(profileData.persona_analysis).length > 0) {
-                    await AsyncStorage.removeItem('discovery_pending');
-                    setIsAnalyzing(false);
-                }
-            }
-
-            // --- ADVISOR FETCH WITH FALLBACK (Website Mirror) ---
-            if (advisorsRes.data && advisorsRes.data.length > 0) {
-                setAdvisors(advisorsRes.data);
-            } else {
-                console.log("No advisors in DB, using fallback list");
-                setAdvisors([
-                    {
-                        id: 'fallback-chloe',
-                        name: 'Chloé',
-                        specialty: 'The "Attachment" Fixer',
-                        rating: 4.9,
-                        image_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
-                        is_online: true
-                    },
-                    {
-                        id: 'fallback-malik',
-                        name: 'Malik',
-                        specialty: 'The Long-term Advisor',
-                        rating: 4.8,
-                        image_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
-                        is_online: true
-                    },
-                    {
-                        id: 'fallback-kenji',
-                        name: 'Kenji',
-                        specialty: 'The Conversation Deepener',
-                        rating: 4.8,
-                        image_url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400',
-                        is_online: true
-                    },
-                    {
-                        id: 'fallback-valentina',
-                        name: 'Valentina',
-                        specialty: 'The Red Flag Spotter',
-                        rating: 4.9,
-                        image_url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-                        is_online: true
-                    }
+            if (authUser) {
+                // Sequential fetches for clarity and to handle potential missing usage records
+                const [profileRes, usageRes, advisorsRes] = await Promise.all([
+                    supabase.from('profiles').select('*').eq('id', authUser.id).maybeSingle(),
+                    supabase.from('user_usage').select('*').eq('user_id', authUser.id).maybeSingle(),
+                    supabase.from('advisors').select('*').order('id', { ascending: true })
                 ]);
-            }
 
-            // Final credit safety check
-            if (!usageData) {
-                const { data: retryUsage } = await supabase.from('user_usage').select('*').eq('user_id', authUser.id).maybeSingle();
-                if (retryUsage) setUsage(retryUsage);
+                const profileData = profileRes.data;
+                const profileError = profileRes.error;
+                const usageData = usageRes.data;
+
+                if (profileError || !profileData) {
+                    setUser(authUser);
+                    setShowOnboarding(true);
+                } else {
+                    const updatedUser = { ...authUser, profile: profileData };
+                    setUser(updatedUser);
+                    setUsage(usageData);
+
+                    // --- WELCOME EMAIL TRIGGER ---
+                    if (profileData && profileData.welcome_email_sent === false && !welcomeEmailTriggered.current) {
+                        welcomeEmailTriggered.current = true;
+                        // Attempt to trigger welcome email (silently)
+                        const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+                        fetch(`${apiUrl}/api/notifications/welcome`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                email: authUser.email,
+                                name: profileData.full_name || authUser.user_metadata?.full_name,
+                                userId: authUser.id
+                            })
+                        }).catch(e => console.log('Email trigger failed:', e));
+                    }
+
+                    // --- ONBOARDING AUTO-TRIGGER ---
+                    if (profileData && !profileData.onboarding_completed_at) {
+                        setShowOnboarding(true);
+                    }
+
+                    if (profileData && profileData.persona_analysis && Object.keys(profileData.persona_analysis || {}).length > 0) {
+                        await AsyncStorage.removeItem('discovery_pending');
+                        setIsAnalyzing(false);
+                    }
+                }
+
+                if (advisorsRes.data && advisorsRes.data.length > 0) {
+                    setAdvisors(advisorsRes.data);
+                }
+
+                if (!usageData && authUser) {
+                    const { data: retryUsage } = await supabase.from('user_usage').select('*').eq('user_id', authUser.id).maybeSingle();
+                    if (retryUsage) setUsage(retryUsage);
+                }
             }
+        } catch (err) {
+            console.error('HomeScreen fetchData error:', err);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     const handleLogout = async () => {
@@ -220,8 +191,10 @@ const HomeScreen = ({ navigation }) => {
     const handleOnboardingComplete = () => {
         setShowOnboarding(false);
         // Website Flow: After rules, we must get the Analysis questions done
-        navigation.navigate('Discovery');
-        fetchData();
+        setTimeout(() => {
+            navigation.navigate('Discovery');
+            fetchData();
+        }, 100);
     };
 
     // Removed handleTopicSelect as it is no longer needed
@@ -229,7 +202,7 @@ const HomeScreen = ({ navigation }) => {
     // --- AUTO-NAVIGATION (Website Pattern) ---
     useEffect(() => {
         if (!loading && user?.profile) {
-            const hasAnalysis = user.profile.persona_analysis && Object.keys(user.profile.persona_analysis).length > 0;
+            const hasAnalysis = user?.profile?.persona_analysis && Object.keys(user.profile.persona_analysis || {}).length > 0;
 
             // 0. If onboarding is NOT completed, show the modal immediately
             if (!user.profile.onboarding_completed_at) {
@@ -241,7 +214,17 @@ const HomeScreen = ({ navigation }) => {
             if (user.profile.onboarding_completed_at && !hasAnalysis) {
                 AsyncStorage.getItem('discovery_pending').then(pending => {
                     if (pending !== 'true') {
-                        navigation.navigate('Discovery');
+                        try {
+                            // Only navigate if we're not already there
+                            const state = navigation.getState();
+                            const currentRoute = state?.routes?.[state?.index]?.name;
+                            if (currentRoute && currentRoute !== 'Discovery') {
+                                navigation.navigate('Discovery');
+                            }
+                        } catch (e) {
+                            // Fallback for web during early mount
+                            setTimeout(() => navigation.navigate('Discovery'), 500);
+                        }
                     }
                 });
             }
@@ -345,7 +328,7 @@ const HomeScreen = ({ navigation }) => {
                 <TouchableOpacity
                     style={styles.analysisCard}
                     onPress={async () => {
-                        const hasAnalysis = user?.profile?.persona_analysis && Object.keys(user.profile.persona_analysis).length > 0;
+                        const hasAnalysis = user?.profile?.persona_analysis && Object.keys(user.profile.persona_analysis || {}).length > 0;
                         if (hasAnalysis) {
                             setShowAnalysisResult(true);
                         } else if (isAnalyzing) {

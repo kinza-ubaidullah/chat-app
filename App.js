@@ -6,7 +6,7 @@ import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from './src/theme/colors';
 import { supabase } from './src/lib/supabase';
@@ -38,25 +38,32 @@ const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
         tabBarInactiveTintColor: '#ADAFBB',
-        tabBarHideOnKeyboard: true,
+        tabBarHideOnKeyboard: Platform.OS !== 'web',
         tabBarStyle: {
-          height: Platform.OS === 'ios' ? 90 : 70,
-          paddingBottom: Platform.OS === 'ios' ? 35 : 15,
+          height: Platform.OS === 'ios' ? 88 : 70, // Standard height
+          paddingBottom: Platform.OS === 'ios' ? 28 : 10,
           paddingTop: 10,
           backgroundColor: Colors.white,
-          borderTopWidth: 1.5,
+          borderTopWidth: 1,
           borderTopColor: '#F0F0F0',
-          elevation: 10,
+          elevation: 8,
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: -4 },
+          shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.1,
-          shadowRadius: 12,
+          shadowRadius: 4,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginBottom: 5,
         }
       }}
     >
@@ -64,28 +71,28 @@ function MainTabs() {
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => <Ionicons name="home" size={size} color={color} />
         }}
       />
       <Tab.Screen
         name="Chat"
         component={ChatListScreen}
         options={{
-          tabBarIcon: ({ color }) => <Ionicons name="chatbubble" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble" size={size} color={color} />
         }}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => <Ionicons name="person" size={size} color={color} />
         }}
       />
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
         options={{
-          tabBarIcon: ({ color }) => <Ionicons name="settings" size={24} color={color} />
+          tabBarIcon: ({ color, size }) => <Ionicons name="settings" size={size} color={color} />
         }}
       />
     </Tab.Navigator>
@@ -102,15 +109,21 @@ export default function App() {
       configureGoogleSignIn();
     }
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const loadApp = async () => {
+      const minLoadTime = new Promise(resolve => setTimeout(resolve, 5000));
+      const sessionCheck = supabase.auth.getSession().catch(err => {
+        console.error('Session error:', err);
+        return { data: { session: null } };
+      });
+
+      const [_, { data: { session } }] = await Promise.all([minLoadTime, sessionCheck]);
+
       console.log('Initial session check:', session ? 'User logged in' : 'No session');
       setSession(session);
       setLoading(false);
-    }).catch(err => {
-      console.error('Session error:', err);
-      setLoading(false);
-    });
+    };
+
+    loadApp();
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -122,46 +135,52 @@ export default function App() {
   }, []);
 
   if (loading) {
-    return <LoadingScreen message="Initializing session..." />;
+    return (
+      <View style={{ flex: 1, backgroundColor: '#FDFCFB', justifyContent: 'center', alignItems: 'center' }}>
+        <LoadingScreen message="Initializing session..." />
+      </View>
+    );
   }
 
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: '#FDFCFB' }}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right'
-          }}
-        >
-          {session ? (
-            /* App Flow */
-            <>
-              <Stack.Screen name="Main" component={MainTabs} />
-              <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
-              <Stack.Screen name="Subscription" component={SubscriptionScreen} />
-              <Stack.Screen name="Analysis" component={AnalysisScreen} />
-              <Stack.Screen name="Discovery" component={DiscoveryScreen} />
-              <Stack.Screen name="About" component={AboutScreen} />
-              <Stack.Screen name="Contact" component={ContactScreen} />
-              <Stack.Screen name="Blogs" component={BlogsScreen} />
-              <Stack.Screen name="BlogPost" component={BlogPostScreen} />
-              <Stack.Screen name="SuccessStories" component={SuccessStoriesScreen} />
-            </>
-          ) : (
-            /* Auth Flow */
-            <>
-              <Stack.Screen name="Welcome" component={WelcomeScreen} />
-              <Stack.Screen name="Login" component={LoginScreen} />
-              <Stack.Screen name="SignUp" component={SignUpScreen} />
-              <Stack.Screen name="OTP" component={OTPScreen} />
-              <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-              <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
+      <View style={{ flex: 1, backgroundColor: '#FDFCFB' }}>
+        <NavigationContainer>
+          <Stack.Navigator
+            screenOptions={{
+              headerShown: false,
+              animation: Platform.OS === 'web' ? 'none' : 'slide_from_right'
+            }}
+          >
+            {session ? (
+              /* App Flow */
+              <>
+                <Stack.Screen name="Main" component={MainTabs} />
+                <Stack.Screen name="ChatDetail" component={ChatDetailScreen} />
+                <Stack.Screen name="Subscription" component={SubscriptionScreen} />
+                <Stack.Screen name="Analysis" component={AnalysisScreen} />
+                <Stack.Screen name="Discovery" component={DiscoveryScreen} />
+                <Stack.Screen name="About" component={AboutScreen} />
+                <Stack.Screen name="Contact" component={ContactScreen} />
+                <Stack.Screen name="Blogs" component={BlogsScreen} />
+                <Stack.Screen name="BlogPost" component={BlogPostScreen} />
+                <Stack.Screen name="SuccessStories" component={SuccessStoriesScreen} />
+              </>
+            ) : (
+              /* Auth Flow */
+              <>
+                <Stack.Screen name="Welcome" component={WelcomeScreen} />
+                <Stack.Screen name="Login" component={LoginScreen} />
+                <Stack.Screen name="SignUp" component={SignUpScreen} />
+                <Stack.Screen name="OTP" component={OTPScreen} />
+                <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+                <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+              </>
+            )}
+          </Stack.Navigator>
+        </NavigationContainer>
+      </View>
     </SafeAreaProvider>
   );
 }

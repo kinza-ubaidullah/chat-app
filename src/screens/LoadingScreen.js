@@ -15,24 +15,24 @@ const LoadingScreen = ({ message = "Loading your experience..." }) => {
                     Animated.timing(scaleAnim, {
                         toValue: 1.2,
                         duration: 1500,
-                        useNativeDriver: true,
+                        useNativeDriver: Platform.OS !== 'web',
                     }),
                     Animated.timing(scaleAnim, {
                         toValue: 1,
                         duration: 1500,
-                        useNativeDriver: true,
+                        useNativeDriver: Platform.OS !== 'web',
                     }),
                 ]),
                 Animated.sequence([
                     Animated.timing(opacityAnim, {
                         toValue: 1,
                         duration: 1500,
-                        useNativeDriver: true,
+                        useNativeDriver: Platform.OS !== 'web',
                     }),
                     Animated.timing(opacityAnim, {
                         toValue: 0.6,
                         duration: 1500,
-                        useNativeDriver: true,
+                        useNativeDriver: Platform.OS !== 'web',
                     }),
                 ]),
             ])

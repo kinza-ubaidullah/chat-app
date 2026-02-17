@@ -33,7 +33,7 @@
       "supabaseUrl": "https://qtoqmcqiajvpnzwulniy.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0b3FtY3FpYWp2cG56d3Vsbml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NjI1MTUsImV4cCI6MjA4MjEzODUxNX0.9lkmvKmHUN0EXUqgc3VHwRhrPBE1SRkytRPZKnicwD0",
       "eas": {
-        "projectId": "b42053f0-0920-42d7-89f3-2e6f0f85673c"
+        "projectId": "511afef4-677c-4200-b41c-225177b50abb"
       }
     },
     "plugins": [

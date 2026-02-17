@@ -1,13 +1,10 @@
-// Web version of googleAuth.js
-import { supabase } from './supabase';
-
 export const configureGoogleSignIn = () => {
-    // No-op on web
-    console.log('Google Sign-In is not supported on Web. Skipping configuration.');
+    // No-op for web or specific web config
+    console.log('Google Sign-In configuration skipped for web.');
 };
 
 export const signInWithGoogle = async () => {
-    // You could implement Supabase's web google auth here if needed:
-    // const { data, error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
-    throw new Error('Google Sign-In via native library is not available on Web.');
+    console.log('Google Sign-In not implemented for web in this demo.');
+    alert('Google Sign-In is only available on mobile devices in this preview.');
+    return null;
 };

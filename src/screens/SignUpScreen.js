@@ -11,6 +11,7 @@ import {
     ScrollView,
     Linking,
 } from 'react-native';
+import ScreenWrapper from '../components/ScreenWrapper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
@@ -95,152 +96,154 @@ const SignUpScreen = ({ navigation }) => {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-            <LinearGradient
-                colors={['#FF9A9E', '#FAD0C4', '#F7F3EE']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.container}
+        <ScreenWrapper style={{ paddingTop: 0 }}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
+                <LinearGradient
+                    colors={['#FF9A9E', '#FAD0C4', '#F7F3EE']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.container}
                 >
-                    {/* Logo/Icon */}
-                    <View style={styles.logoContainer}>
-                        <View style={styles.logoCircle}>
-                            <Text style={styles.logoHeart}>♥</Text>
-                        </View>
-                    </View>
-
-                    {/* Main Card */}
-                    <View style={styles.card}>
-                        {/* Header */}
-                        <View style={styles.header}>
-                            <Text style={styles.title}>Create account</Text>
-                            <Text style={styles.subtitle}>Start your journey to better relationships</Text>
-                        </View>
-
-                        {/* Error Message Display */}
-                        {errorMessage ? (
-                            <View style={styles.errorBanner}>
-                                <Ionicons name="alert-circle" size={20} color="#E94057" />
-                                <Text style={styles.errorText}>{errorMessage}</Text>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Logo/Icon */}
+                        <View style={styles.logoContainer}>
+                            <View style={styles.logoCircle}>
+                                <Text style={styles.logoHeart}>♥</Text>
                             </View>
-                        ) : null}
-
-                        {/* Name Input */}
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={[styles.input, errorMessage && !name && styles.inputError]}
-                                placeholder="Full Name"
-                                placeholderTextColor="#999"
-                                value={name}
-                                onChangeText={(text) => {
-                                    setName(text);
-                                    if (errorMessage) setErrorMessage('');
-                                }}
-                                autoCapitalize="words"
-                            />
                         </View>
 
-                        {/* Email Input */}
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={[styles.input, errorMessage && !email && styles.inputError]}
-                                placeholder="Email Address"
-                                placeholderTextColor="#999"
-                                value={email}
-                                onChangeText={(text) => {
-                                    setEmail(text);
-                                    if (errorMessage) setErrorMessage('');
-                                }}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                            />
-                        </View>
+                        {/* Main Card */}
+                        <View style={styles.card}>
+                            {/* Header */}
+                            <View style={styles.header}>
+                                <Text style={styles.title}>Create account</Text>
+                                <Text style={styles.subtitle}>Start your journey to better relationships</Text>
+                            </View>
 
-                        {/* Password Input */}
-                        <View style={styles.inputContainer}>
-                            <View style={[styles.passwordContainer, errorMessage && !password && styles.inputError]}>
+                            {/* Error Message Display */}
+                            {errorMessage ? (
+                                <View style={styles.errorBanner}>
+                                    <Ionicons name="alert-circle" size={20} color="#E94057" />
+                                    <Text style={styles.errorText}>{errorMessage}</Text>
+                                </View>
+                            ) : null}
+
+                            {/* Name Input */}
+                            <View style={styles.inputContainer}>
                                 <TextInput
-                                    style={styles.passwordInput}
-                                    placeholder="Password"
+                                    style={[styles.input, errorMessage && !name && styles.inputError]}
+                                    placeholder="Full Name"
                                     placeholderTextColor="#999"
-                                    value={password}
+                                    value={name}
                                     onChangeText={(text) => {
-                                        setPassword(text);
+                                        setName(text);
                                         if (errorMessage) setErrorMessage('');
                                     }}
-                                    secureTextEntry={!showPassword}
-                                    autoCapitalize="none"
+                                    autoCapitalize="words"
                                 />
-                                <TouchableOpacity
-                                    onPress={() => setShowPassword(!showPassword)}
-                                    style={styles.eyeIcon}
-                                >
-                                    <Ionicons
-                                        name={showPassword ? "eye-off-outline" : "eye-outline"}
-                                        size={22}
-                                        color="#999"
+                            </View>
+
+                            {/* Email Input */}
+                            <View style={styles.inputContainer}>
+                                <TextInput
+                                    style={[styles.input, errorMessage && !email && styles.inputError]}
+                                    placeholder="Email Address"
+                                    placeholderTextColor="#999"
+                                    value={email}
+                                    onChangeText={(text) => {
+                                        setEmail(text);
+                                        if (errorMessage) setErrorMessage('');
+                                    }}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                />
+                            </View>
+
+                            {/* Password Input */}
+                            <View style={styles.inputContainer}>
+                                <View style={[styles.passwordContainer, errorMessage && !password && styles.inputError]}>
+                                    <TextInput
+                                        style={styles.passwordInput}
+                                        placeholder="Password"
+                                        placeholderTextColor="#999"
+                                        value={password}
+                                        onChangeText={(text) => {
+                                            setPassword(text);
+                                            if (errorMessage) setErrorMessage('');
+                                        }}
+                                        secureTextEntry={!showPassword}
+                                        autoCapitalize="none"
                                     />
+                                    <TouchableOpacity
+                                        onPress={() => setShowPassword(!showPassword)}
+                                        style={styles.eyeIcon}
+                                    >
+                                        <Ionicons
+                                            name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                            size={22}
+                                            color="#999"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Terms Checkbox */}
+                            <TouchableOpacity
+                                style={styles.checkboxContainer}
+                                onPress={() => {
+                                    setAgreed(!agreed);
+                                    if (errorMessage) setErrorMessage('');
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.checkbox, agreed && styles.checkboxChecked, errorMessage && !agreed && styles.checkboxError]}>
+                                    {agreed && <Ionicons name="checkmark" size={16} color="#fff" />}
+                                </View>
+                                <Text style={styles.checkboxText}>
+                                    I agree to the{' '}
+                                    <Text style={styles.linkText}>Terms & Conditions</Text>
+                                </Text>
+                            </TouchableOpacity>
+
+                            {/* Sign Up Button */}
+                            <TouchableOpacity
+                                style={[styles.signupButton, loading && styles.signupButtonDisabled]}
+                                onPress={handleSignUp}
+                                disabled={loading}
+                                activeOpacity={0.8}
+                            >
+                                <LinearGradient
+                                    colors={['#E94057', '#F27121']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.signupGradient}
+                                >
+                                    <Text style={styles.signupButtonText}>
+                                        {loading ? 'Creating Account...' : 'Create Account'}
+                                    </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+
+                            {/* Login Link */}
+                            <View style={styles.loginContainer}>
+                                <Text style={styles.loginText}>Already have an account? </Text>
+                                <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                                    <Text style={styles.loginLink}>Sign in</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
-
-                        {/* Terms Checkbox */}
-                        <TouchableOpacity
-                            style={styles.checkboxContainer}
-                            onPress={() => {
-                                setAgreed(!agreed);
-                                if (errorMessage) setErrorMessage('');
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <View style={[styles.checkbox, agreed && styles.checkboxChecked, errorMessage && !agreed && styles.checkboxError]}>
-                                {agreed && <Ionicons name="checkmark" size={16} color="#fff" />}
-                            </View>
-                            <Text style={styles.checkboxText}>
-                                I agree to the{' '}
-                                <Text style={styles.linkText}>Terms & Conditions</Text>
-                            </Text>
-                        </TouchableOpacity>
-
-                        {/* Sign Up Button */}
-                        <TouchableOpacity
-                            style={[styles.signupButton, loading && styles.signupButtonDisabled]}
-                            onPress={handleSignUp}
-                            disabled={loading}
-                            activeOpacity={0.8}
-                        >
-                            <LinearGradient
-                                colors={['#E94057', '#F27121']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.signupGradient}
-                            >
-                                <Text style={styles.signupButtonText}>
-                                    {loading ? 'Creating Account...' : 'Create Account'}
-                                </Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-
-                        {/* Login Link */}
-                        <View style={styles.loginContainer}>
-                            <Text style={styles.loginText}>Already have an account? </Text>
-                            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-                                <Text style={styles.loginLink}>Sign in</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </ScrollView>
-            </LinearGradient>
-        </KeyboardAvoidingView>
+                    </ScrollView>
+                </LinearGradient>
+            </KeyboardAvoidingView>
+        </ScreenWrapper>
     );
 };
 

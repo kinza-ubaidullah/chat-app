@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
 import { supabase } from '../lib/supabase';
+import ScreenWrapper from '../components/ScreenWrapper';
 
 const { width } = Dimensions.get('window');
 
@@ -58,127 +59,129 @@ const LoginScreen = ({ navigation }) => {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={{ flex: 1 }}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        >
-            <LinearGradient
-                colors={['#FF9A9E', '#FAD0C4', '#F7F3EE']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.container}
+        <ScreenWrapper style={{ paddingTop: 0 }}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             >
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
+                <LinearGradient
+                    colors={['#FF9A9E', '#FAD0C4', '#F7F3EE']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.container}
                 >
-                    {/* Logo/Icon */}
-                    <View style={styles.logoContainer}>
-                        <View style={styles.logoCircle}>
-                            <Text style={styles.logoHeart}>♥</Text>
-                        </View>
-                    </View>
-
-                    {/* Main Card */}
-                    <View style={styles.card}>
-                        {/* Header */}
-                        <View style={styles.header}>
-                            <Text style={styles.title}>Welcome back</Text>
-                            <Text style={styles.subtitle}>Sign in to continue your journey</Text>
-                        </View>
-
-                        {/* Error Message Display */}
-                        {errorMessage ? (
-                            <View style={styles.errorBanner}>
-                                <Ionicons name="alert-circle" size={20} color="#E94057" />
-                                <Text style={styles.errorText}>{errorMessage}</Text>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Logo/Icon */}
+                        <View style={styles.logoContainer}>
+                            <View style={styles.logoCircle}>
+                                <Text style={styles.logoHeart}>♥</Text>
                             </View>
-                        ) : null}
-
-                        {/* Email Input */}
-                        <View style={styles.inputContainer}>
-                            <TextInput
-                                style={[styles.input, errorMessage && !email && styles.inputError]}
-                                placeholder="Email Address"
-                                placeholderTextColor="#999"
-                                value={email}
-                                onChangeText={(text) => {
-                                    setEmail(text);
-                                    if (errorMessage) setErrorMessage('');
-                                }}
-                                keyboardType="email-address"
-                                autoCapitalize="none"
-                                autoCorrect={false}
-                            />
                         </View>
 
-                        {/* Password Input */}
-                        <View style={styles.inputContainer}>
-                            <View style={[styles.passwordContainer, errorMessage && !password && styles.inputError]}>
+                        {/* Main Card */}
+                        <View style={styles.card}>
+                            {/* Header */}
+                            <View style={styles.header}>
+                                <Text style={styles.title}>Welcome back</Text>
+                                <Text style={styles.subtitle}>Sign in to continue your journey</Text>
+                            </View>
+
+                            {/* Error Message Display */}
+                            {errorMessage ? (
+                                <View style={styles.errorBanner}>
+                                    <Ionicons name="alert-circle" size={20} color="#E94057" />
+                                    <Text style={styles.errorText}>{errorMessage}</Text>
+                                </View>
+                            ) : null}
+
+                            {/* Email Input */}
+                            <View style={styles.inputContainer}>
                                 <TextInput
-                                    style={styles.passwordInput}
-                                    placeholder="Password"
+                                    style={[styles.input, errorMessage && !email && styles.inputError]}
+                                    placeholder="Email Address"
                                     placeholderTextColor="#999"
-                                    value={password}
+                                    value={email}
                                     onChangeText={(text) => {
-                                        setPassword(text);
+                                        setEmail(text);
                                         if (errorMessage) setErrorMessage('');
                                     }}
-                                    secureTextEntry={!showPassword}
+                                    keyboardType="email-address"
                                     autoCapitalize="none"
+                                    autoCorrect={false}
                                 />
-                                <TouchableOpacity
-                                    onPress={() => setShowPassword(!showPassword)}
-                                    style={styles.eyeIcon}
-                                >
-                                    <Ionicons
-                                        name={showPassword ? "eye-off-outline" : "eye-outline"}
-                                        size={22}
-                                        color="#999"
+                            </View>
+
+                            {/* Password Input */}
+                            <View style={styles.inputContainer}>
+                                <View style={[styles.passwordContainer, errorMessage && !password && styles.inputError]}>
+                                    <TextInput
+                                        style={styles.passwordInput}
+                                        placeholder="Password"
+                                        placeholderTextColor="#999"
+                                        value={password}
+                                        onChangeText={(text) => {
+                                            setPassword(text);
+                                            if (errorMessage) setErrorMessage('');
+                                        }}
+                                        secureTextEntry={!showPassword}
+                                        autoCapitalize="none"
                                     />
+                                    <TouchableOpacity
+                                        onPress={() => setShowPassword(!showPassword)}
+                                        style={styles.eyeIcon}
+                                    >
+                                        <Ionicons
+                                            name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                            size={22}
+                                            color="#999"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Forgot Password Link */}
+                            <TouchableOpacity
+                                style={styles.forgotContainer}
+                                onPress={() => navigation.navigate('ForgotPassword')}
+                            >
+                                <Text style={styles.forgotText}>Forgot Password?</Text>
+                            </TouchableOpacity>
+
+                            {/* Login Button */}
+                            <TouchableOpacity
+                                style={[styles.loginButton, loading && styles.loginButtonDisabled]}
+                                onPress={handleLogin}
+                                disabled={loading}
+                                activeOpacity={0.8}
+                            >
+                                <LinearGradient
+                                    colors={['#E94057', '#F27121']}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={styles.loginGradient}
+                                >
+                                    <Text style={styles.loginButtonText}>
+                                        {loading ? 'Signing in...' : 'Sign In'}
+                                    </Text>
+                                </LinearGradient>
+                            </TouchableOpacity>
+
+                            {/* Sign Up Link */}
+                            <View style={styles.signupContainer}>
+                                <Text style={styles.signupText}>Don't have an account? </Text>
+                                <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+                                    <Text style={styles.signupLink}>Create one</Text>
                                 </TouchableOpacity>
                             </View>
                         </View>
-
-                        {/* Forgot Password Link */}
-                        <TouchableOpacity
-                            style={styles.forgotContainer}
-                            onPress={() => navigation.navigate('ForgotPassword')}
-                        >
-                            <Text style={styles.forgotText}>Forgot Password?</Text>
-                        </TouchableOpacity>
-
-                        {/* Login Button */}
-                        <TouchableOpacity
-                            style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-                            onPress={handleLogin}
-                            disabled={loading}
-                            activeOpacity={0.8}
-                        >
-                            <LinearGradient
-                                colors={['#E94057', '#F27121']}
-                                start={{ x: 0, y: 0 }}
-                                end={{ x: 1, y: 0 }}
-                                style={styles.loginGradient}
-                            >
-                                <Text style={styles.loginButtonText}>
-                                    {loading ? 'Signing in...' : 'Sign In'}
-                                </Text>
-                            </LinearGradient>
-                        </TouchableOpacity>
-
-                        {/* Sign Up Link */}
-                        <View style={styles.signupContainer}>
-                            <Text style={styles.signupText}>Don't have an account? </Text>
-                            <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-                                <Text style={styles.signupLink}>Create one</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </ScrollView>
-            </LinearGradient>
-        </KeyboardAvoidingView>
+                    </ScrollView>
+                </LinearGradient>
+            </KeyboardAvoidingView>
+        </ScreenWrapper>
     );
 };
 

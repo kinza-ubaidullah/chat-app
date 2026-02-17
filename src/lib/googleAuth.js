@@ -2,10 +2,14 @@ import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-si
 import { supabase } from './supabase';
 
 export const configureGoogleSignIn = () => {
-    GoogleSignin.configure({
-        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'YOUR_WEB_CLIENT_ID',
-        offlineAccess: true,
-    });
+    try {
+        GoogleSignin.configure({
+            webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'YOUR_WEB_CLIENT_ID',
+            offlineAccess: true,
+        });
+    } catch (e) {
+        console.log('Google Sign-In configuration failed:', e);
+    }
 };
 
 export const signInWithGoogle = async () => {
