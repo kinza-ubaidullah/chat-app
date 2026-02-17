@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import { supabase } from '../lib/supabase';
 import VoiceCallModal from '../components/VoiceCallModal';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const ChatDetailScreen = ({ route, navigation }) => {
     const { name, id: advisorId, image_url, initialContext } = route.params || { name: 'Advisor', id: null }; // Added image_url and initialContext
@@ -253,10 +254,15 @@ const ChatDetailScreen = ({ route, navigation }) => {
         }
     };
 
+    const insets = useSafeAreaInsets();
+
     return (
         <ScreenWrapper>
-            <SafeAreaView style={{ flex: 1 }}>
-                {/* Custom Chat Header (Dating Tool mode) */}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            >
                 <View style={styles.chatHeader}>
                     <View style={styles.headerLeft}>
                         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
@@ -290,7 +296,6 @@ const ChatDetailScreen = ({ route, navigation }) => {
                     </View>
                 </View>
 
-
                 {/* Messages Area */}
                 {loading ? (
                     <View style={{ flex: 1, justifyContent: 'center' }}>
@@ -314,6 +319,7 @@ const ChatDetailScreen = ({ route, navigation }) => {
                         ref={scrollViewRef}
                         contentContainerStyle={styles.messagesContainer}
                         onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                        keyboardShouldPersistTaps="handled"
                     >
                         {messages.length === 0 ? (
                             <View style={styles.emptyContainer}>
@@ -347,10 +353,7 @@ const ChatDetailScreen = ({ route, navigation }) => {
                 )}
 
                 {/* Input Bar */}
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                    style={styles.inputContainer}
-                >
+                <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 15) }]}>
                     <TouchableOpacity style={styles.micBtn}>
                         <Ionicons name="mic-outline" size={24} color="#121E39" />
                     </TouchableOpacity>
@@ -360,12 +363,14 @@ const ChatDetailScreen = ({ route, navigation }) => {
                             placeholder="Type your message..."
                             value={message}
                             onChangeText={setMessage}
+                            multiline
+                            maxHeight={100}
                         />
                         <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
                             <Ionicons name="send-outline" size={20} color={Colors.primary} />
                         </TouchableOpacity>
                     </View>
-                </KeyboardAvoidingView>
+                </View>
 
                 <VoiceCallModal
                     visible={showVoiceModal}
@@ -373,8 +378,7 @@ const ChatDetailScreen = ({ route, navigation }) => {
                     advisor={{ name, specialty: route.params?.specialty, image_url, id: advisorId }}
                     userId={currentUser?.id}
                 />
-
-            </SafeAreaView>
+            </KeyboardAvoidingView>
         </ScreenWrapper>
     );
 };

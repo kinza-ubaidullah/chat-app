@@ -15,6 +15,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
 import { supabase } from '../lib/supabase';
+import ScreenWrapper from '../components/ScreenWrapper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -145,12 +147,16 @@ const AnalysisScreen = ({ navigation }) => {
         }
     };
 
+    const insets = useSafeAreaInsets();
+
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={Colors.primary} />
-                <Text style={styles.loadingText}>Loading questions...</Text>
-            </View>
+            <ScreenWrapper>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={Colors.primary} />
+                    <Text style={styles.loadingText}>Loading questions...</Text>
+                </View>
+            </ScreenWrapper>
         );
     }
 
@@ -162,7 +168,7 @@ const AnalysisScreen = ({ navigation }) => {
     });
 
     return (
-        <SafeAreaView style={styles.container}>
+        <ScreenWrapper>
             <LinearGradient
                 colors={['#FFF', '#FFF5F5']}
                 style={styles.gradient}
@@ -181,6 +187,7 @@ const AnalysisScreen = ({ navigation }) => {
                 <ScrollView
                     contentContainerStyle={styles.content}
                     showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
                     {/* Question Section */}
                     <View style={styles.questionContainer}>
@@ -235,9 +242,10 @@ const AnalysisScreen = ({ navigation }) => {
                             )}
                         </TouchableOpacity>
                     )}
+                    <View style={{ height: 40 }} />
                 </ScrollView>
             </LinearGradient>
-        </SafeAreaView>
+        </ScreenWrapper>
     );
 };
 

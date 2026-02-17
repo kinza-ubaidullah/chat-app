@@ -66,7 +66,7 @@ const ChatListScreen = ({ navigation }) => {
     };
 
     return (
-        <ScreenWrapper useBottomInset={true}>
+        <ScreenWrapper>
             <Header onLogout={handleLogout} />
             <View style={styles.container}>
                 <View style={styles.listHeader}>
@@ -127,6 +127,7 @@ const ChatListScreen = ({ navigation }) => {
                                 </View>
                             </TouchableOpacity>
                         ))}
+                        <View style={{ height: 120 }} />
                     </ScrollView>
                 )}
             </View>

@@ -137,7 +137,7 @@ const DiscoveryScreen = ({ navigation, route }) => {
 
                         if (advisor) {
                             navigation.reset({
-                                index: 0,
+                                index: 1,
                                 routes: [
                                     { name: 'Main' },
                                     {
@@ -184,11 +184,14 @@ const DiscoveryScreen = ({ navigation, route }) => {
     }
 
     return (
-        <ScreenWrapper>
-            <SafeAreaView style={styles.container}>
+        <ScreenWrapper style={{ backgroundColor: '#fff' }}>
+            <View style={styles.container}>
                 {/* Header with Progress Bar */}
                 <View style={styles.header}>
-                    <TouchableOpacity onPress={() => currentStep > 1 ? animateNext(() => setCurrentStep(currentStep - 1)) : navigation.goBack()} style={styles.backButton}>
+                    <TouchableOpacity
+                        onPress={() => currentStep > 1 ? animateNext(() => setCurrentStep(currentStep - 1)) : navigation.goBack()}
+                        style={styles.backButton}
+                    >
                         <Ionicons name="chevron-back" size={24} color="#12172D" />
                     </TouchableOpacity>
                     <View style={styles.progressBarContainer}>
@@ -197,54 +200,62 @@ const DiscoveryScreen = ({ navigation, route }) => {
                     <View style={{ width: 44 }} />
                 </View>
 
-                <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
-                    <Text style={styles.stepIndicator}>STEP {currentStep} OF {totalSteps}</Text>
-                    <Text style={styles.questionText}>
-                        {currentQuestion?.question_text || "Preparing next question..."}
-                    </Text>
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    bounces={false}
+                >
+                    <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                        <Text style={styles.stepIndicator}>STEP {currentStep} OF {totalSteps}</Text>
+                        <Text style={styles.questionText}>
+                            {currentQuestion?.question_text || "Preparing next question..."}
+                        </Text>
 
-                    <View style={styles.optionsContainer}>
-                        {currentQuestion ? (
-                            (() => {
-                                try {
-                                    const options = typeof currentQuestion.options === 'string'
-                                        ? JSON.parse(currentQuestion.options)
-                                        : currentQuestion.options;
+                        <View style={styles.optionsContainer}>
+                            {currentQuestion ? (
+                                (() => {
+                                    try {
+                                        const options = typeof currentQuestion.options === 'string'
+                                            ? JSON.parse(currentQuestion.options)
+                                            : currentQuestion.options;
 
-                                    return options.map((option, index) => (
-                                        <TouchableOpacity
-                                            key={index}
-                                            activeOpacity={0.7}
-                                            style={styles.optionButton}
-                                            onPress={() => handleOptionSelect(option)}
-                                        >
-                                            <Text style={styles.optionText}>{option}</Text>
-                                            <Ionicons name="chevron-forward" size={18} color="#E94057" />
-                                        </TouchableOpacity>
-                                    ));
-                                } catch (e) {
-                                    console.error("Error parsing options:", e);
-                                    return <Text>Error loading options</Text>;
-                                }
-                            })()
-                        ) : (
-                            <ActivityIndicator size="small" color="#E94057" />
-                        )}
-                    </View>
-                </Animated.View>
+                                        return options.map((option, index) => (
+                                            <TouchableOpacity
+                                                key={index}
+                                                activeOpacity={0.7}
+                                                style={styles.optionButton}
+                                                onPress={() => handleOptionSelect(option)}
+                                            >
+                                                <Text style={styles.optionText}>{option}</Text>
+                                                <Ionicons name="chevron-forward" size={18} color="#E94057" />
+                                            </TouchableOpacity>
+                                        ));
+                                    } catch (e) {
+                                        console.error("Error parsing options:", e);
+                                        return <Text>Error loading options</Text>;
+                                    }
+                                })()
+                            ) : (
+                                <ActivityIndicator size="small" color="#E94057" />
+                            )}
+                        </View>
+                    </Animated.View>
+                </ScrollView>
 
                 {isSubmitting && (
                     <View style={styles.submittingOverlay}>
                         <LinearGradient
-                            colors={['rgba(233, 64, 87, 0.9)', 'rgba(242, 113, 33, 0.9)']}
+                            colors={['#E94057', '#F27121']}
                             style={StyleSheet.absoluteFill}
                         />
-                        <ActivityIndicator size="large" color="white" />
-                        <Text style={styles.submittingText}>Analysing your profile...</Text>
-                        <Text style={styles.submittingSubtext}>Preparing your personalized advice</Text>
+                        <View style={styles.overlayContent}>
+                            <ActivityIndicator size="large" color="white" />
+                            <Text style={styles.submittingText}>Analysing your profile...</Text>
+                            <Text style={styles.submittingSubtext}>Preparing your personalized advice</Text>
+                        </View>
                     </View>
                 )}
-            </SafeAreaView>
+            </View>
         </ScreenWrapper>
     );
 };
@@ -264,11 +275,11 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 15,
+        paddingVertical: 10,
     },
     backButton: {
-        width: 44,
-        height: 44,
+        width: 40,
+        height: 40,
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#E8E6EA',
@@ -277,78 +288,90 @@ const styles = StyleSheet.create({
     },
     progressBarContainer: {
         flex: 1,
-        height: 8,
+        height: 6,
         backgroundColor: '#F3F3F3',
-        borderRadius: 4,
+        borderRadius: 3,
         marginHorizontal: 15,
         overflow: 'hidden',
     },
     progressBar: {
         height: '100%',
         backgroundColor: '#E94057',
-        borderRadius: 4,
+        borderRadius: 3,
+    },
+    scrollContent: {
+        flexGrow: 1,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 30,
-        paddingTop: 40,
+        paddingHorizontal: 25,
+        paddingTop: 30,
+        paddingBottom: 40,
     },
     stepIndicator: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '900',
         color: '#E94057',
         textTransform: 'uppercase',
-        marginBottom: 12,
-        letterSpacing: 1.5,
+        marginBottom: 8,
+        letterSpacing: 1,
     },
     questionText: {
-        fontSize: 32,
+        fontSize: 28,
         fontWeight: '800',
         color: '#12172D',
-        marginBottom: 40,
-        lineHeight: 40,
+        marginBottom: 30,
+        lineHeight: 36,
     },
     optionsContainer: {
-        gap: 12,
+        gap: 10,
     },
     optionButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: '#fff',
-        paddingVertical: 22,
-        paddingHorizontal: 25,
-        borderRadius: 22,
+        paddingVertical: 18,
+        paddingHorizontal: 22,
+        borderRadius: 18,
         borderWidth: 2,
         borderColor: '#F3F3F3',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
-        shadowRadius: 12,
-        elevation: 3,
+        shadowRadius: 10,
+        elevation: 2,
     },
     optionText: {
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: '700',
         color: '#12172D',
+        flex: 1,
+        marginRight: 10,
     },
     submittingOverlay: {
         ...StyleSheet.absoluteFillObject,
+        zIndex: 100,
+    },
+    overlayContent: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        zIndex: 100,
+        padding: 30,
     },
     submittingText: {
         color: 'white',
         marginTop: 20,
         fontSize: 22,
         fontWeight: '800',
+        textAlign: 'center',
     },
     submittingSubtext: {
         color: 'rgba(255,255,255,0.8)',
-        marginTop: 8,
-        fontSize: 14,
+        marginTop: 10,
+        fontSize: 15,
         fontWeight: '500',
+        textAlign: 'center',
     },
 });
 

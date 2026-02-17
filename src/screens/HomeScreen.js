@@ -329,7 +329,7 @@ const HomeScreen = ({ navigation }) => {
     };
 
     return (
-        <ScreenWrapper useBottomInset={true}>
+        <ScreenWrapper>
             <Header onLogout={handleLogout} />
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
                 {/* Welcome Banner */}

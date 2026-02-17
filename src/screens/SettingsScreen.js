@@ -22,7 +22,7 @@ const SettingsScreen = ({ navigation }) => {
     ];
 
     return (
-        <ScreenWrapper useBottomInset={true}>
+        <ScreenWrapper>
             <Header onLogout={handleLogout} />
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <Text style={styles.title}>Settings</Text>
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         paddingHorizontal: 20,
-        paddingBottom: 100, // Adjusted for tab bar
+        paddingBottom: 120, // Adjusted for tab bar
     },
     title: {
         fontSize: 32,
