@@ -3,7 +3,7 @@ import { StyleSheet, View, TextInput, Text, Animated, Platform } from 'react-nat
 import { Colors } from '../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
 
-const InputField = ({ icon, placeholder, value, onChangeText, secureTextEntry, label }) => {
+const InputField = ({ icon, placeholder, value, onChangeText, secureTextEntry, label, error }) => {
     const [isFocused, setIsFocused] = useState(false);
     const focusAnim = useRef(new Animated.Value(0)).current;
 
@@ -27,7 +27,7 @@ const InputField = ({ icon, placeholder, value, onChangeText, secureTextEntry, l
 
     const borderColor = focusAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [Colors.border, Colors.primary],
+        outputRange: [error ? '#E94057' : Colors.border, error ? '#E94057' : Colors.primary],
     });
 
     const shadowOpacity = focusAnim.interpolate({
@@ -37,13 +37,13 @@ const InputField = ({ icon, placeholder, value, onChangeText, secureTextEntry, l
 
     return (
         <View style={styles.container}>
-            {label && <Text style={styles.label}>{label}</Text>}
+            {label && <Text style={[styles.label, error && { color: '#E94057' }]}>{label}</Text>}
             <Animated.View style={[
                 styles.inputWrapper,
                 {
                     borderColor: borderColor,
                     shadowOpacity: shadowOpacity,
-                    backgroundColor: isFocused ? Colors.surface : Colors.white,
+                    backgroundColor: error ? '#FFF5F5' : (isFocused ? Colors.surface : Colors.white),
                     transform: [{
                         scale: focusAnim.interpolate({
                             inputRange: [0, 1],

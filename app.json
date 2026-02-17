@@ -13,7 +13,8 @@
       "backgroundColor": "#FDFCFB"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lovewise.app"
     },
     "android": {
       "package": "com.lovewise.app",
@@ -25,6 +26,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "supabaseUrl": "https://qtoqmcqiajvpnzwulniy.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0b3FtY3FpYWp2cG56d3Vsbml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NjI1MTUsImV4cCI6MjA4MjEzODUxNX0.9lkmvKmHUN0EXUqgc3VHwRhrPBE1SRkytRPZKnicwD0",
+      "eas": {
+        "projectId": "b42053f0-0920-42d7-89f3-2e6f0f85673c"
+      }
+    },
+    "plugins": [
+      "expo-secure-store",
+      "@react-native-google-signin/google-signin"
+    ]
   }
 }

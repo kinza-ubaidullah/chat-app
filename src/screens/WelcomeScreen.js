@@ -23,6 +23,8 @@ const WelcomeScreen = ({ navigation }) => {
         ]).start();
     }, []);
 
+
+
     return (
         <ScreenWrapper>
             <Animated.View style={[
@@ -160,6 +162,11 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         borderWidth: 2,
         borderColor: Colors.border,
+    },
+    secondaryButtonText: {
+        color: Colors.text,
+        fontSize: 16,
+        fontWeight: '600',
     },
     secondaryButtonText: {
         color: Colors.text,

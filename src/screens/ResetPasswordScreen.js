@@ -15,22 +15,52 @@ import { Ionicons } from '@expo/vector-icons';
 import InputField from '../components/InputField';
 import ScreenWrapper from '../components/ScreenWrapper';
 
+import { supabase } from '../lib/supabase';
+
 const ResetPasswordScreen = ({ navigation }) => {
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
-    const handleReset = () => {
+    const handleReset = async () => {
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        if (!password || !confirmPassword) {
+            setErrorMessage('Please fill in all fields.');
+            return;
+        }
         if (password !== confirmPassword) {
-            Alert.alert('Error', 'Passwords do not match');
+            setErrorMessage('Passwords do not match.');
             return;
         }
         if (password.length < 6) {
-            Alert.alert('Error', 'Password must be at least 6 characters');
+            setErrorMessage('Password must be at least 6 characters.');
             return;
         }
-        Alert.alert('Success', 'Password has been reset successfully', [
-            { text: 'OK', onPress: () => navigation.navigate('Login') }
-        ]);
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.updateUser({
+                password: password.trim()
+            });
+
+            if (error) {
+                setErrorMessage(error.message);
+            } else {
+                setSuccessMessage('Your password has been reset successfully!');
+                setTimeout(() => {
+                    navigation.navigate('Login');
+                }, 2000);
+            }
+        } catch (err) {
+            console.error('Reset password error:', err);
+            setErrorMessage('An unexpected error occurred.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -49,11 +79,26 @@ const ResetPasswordScreen = ({ navigation }) => {
                             <View style={styles.logoSquare}>
                                 <Ionicons name="heart" size={24} color="white" />
                             </View>
-                            <Text style={styles.logoText}>LoveWise</Text>
+                            <Text style={styles.logoText}>Datingadvice</Text>
                         </View>
                         <Text style={styles.title}>New Password</Text>
                         <Text style={styles.subtitle}>Create a new password to secure your account.</Text>
                     </View>
+
+                    {/* Messages */}
+                    {errorMessage ? (
+                        <View style={styles.errorBanner}>
+                            <Ionicons name="alert-circle" size={20} color="#E94057" />
+                            <Text style={styles.errorText}>{errorMessage}</Text>
+                        </View>
+                    ) : null}
+
+                    {successMessage ? (
+                        <View style={styles.successBanner}>
+                            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                            <Text style={styles.successText}>{successMessage}</Text>
+                        </View>
+                    ) : null}
 
                     <InputField
                         label="New Password"
@@ -61,7 +106,11 @@ const ResetPasswordScreen = ({ navigation }) => {
                         icon="lock-closed-outline"
                         secureTextEntry
                         value={password}
-                        onChangeText={setPassword}
+                        onChangeText={(text) => {
+                            setPassword(text);
+                            if (errorMessage) setErrorMessage('');
+                        }}
+                        error={!!errorMessage && !password}
                     />
 
                     <InputField
@@ -70,14 +119,21 @@ const ResetPasswordScreen = ({ navigation }) => {
                         icon="lock-closed-outline"
                         secureTextEntry
                         value={confirmPassword}
-                        onChangeText={setConfirmPassword}
+                        onChangeText={(text) => {
+                            setConfirmPassword(text);
+                            if (errorMessage) setErrorMessage('');
+                        }}
+                        error={!!errorMessage && !confirmPassword}
                     />
 
                     <TouchableOpacity
-                        style={styles.resetButton}
+                        style={[styles.resetButton, loading && { opacity: 0.7 }]}
                         onPress={handleReset}
+                        disabled={loading}
                     >
-                        <Text style={styles.resetButtonText}>Reset Password</Text>
+                        <Text style={styles.resetButtonText}>
+                            {loading ? 'Updating...' : 'Reset Password'}
+                        </Text>
                     </TouchableOpacity>
 
                     <View style={styles.footer}>
@@ -151,6 +207,40 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#7C8BA0',
         textAlign: 'center',
+    },
+    errorBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF5F5',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(233, 64, 87, 0.2)',
+    },
+    errorText: {
+        color: '#E94057',
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 8,
+        flex: 1,
+    },
+    successBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F2F9F2',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(76, 175, 80, 0.2)',
+    },
+    successText: {
+        color: '#4CAF50',
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 8,
+        flex: 1,
     },
     resetButton: {
         width: '100%',

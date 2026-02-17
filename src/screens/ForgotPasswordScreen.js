@@ -14,8 +14,46 @@ import { Ionicons } from '@expo/vector-icons';
 import InputField from '../components/InputField';
 import ScreenWrapper from '../components/ScreenWrapper';
 
+import { supabase } from '../lib/supabase';
+
 const ForgotPasswordScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+
+    const handleSend = async () => {
+        setErrorMessage('');
+        setSuccessMessage('');
+
+        if (!email) {
+            setErrorMessage('Please enter your email address.');
+            return;
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+            setErrorMessage('Please enter a valid email address.');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+
+            if (error) {
+                setErrorMessage(error.message);
+            } else {
+                // Navigate to OTPScreen with recovery type
+                navigation.navigate('OTP', { email: email.trim(), type: 'recovery' });
+            }
+        } catch (error) {
+            console.error('Forgot password error:', error);
+            setErrorMessage('Connection failed. Please check your internet.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <ScreenWrapper>
@@ -33,25 +71,48 @@ const ForgotPasswordScreen = ({ navigation }) => {
                             <View style={styles.logoSquare}>
                                 <Ionicons name="heart" size={24} color="white" />
                             </View>
-                            <Text style={styles.logoText}>LoveWise</Text>
+                            <Text style={styles.logoText}>Datingadvice</Text>
                         </View>
                         <Text style={styles.title}>Forgot Password</Text>
-                        <Text style={styles.subtitle}>Enter your email address and we'll send you a code to reset your password.</Text>
+                        <Text style={styles.subtitle}>Enter your email address and we'll send you a link to reset your password.</Text>
                     </View>
+
+                    {/* Messages */}
+                    {errorMessage ? (
+                        <View style={styles.errorBanner}>
+                            <Ionicons name="alert-circle" size={20} color="#E94057" />
+                            <Text style={styles.errorText}>{errorMessage}</Text>
+                        </View>
+                    ) : null}
+
+                    {successMessage ? (
+                        <View style={styles.successBanner}>
+                            <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
+                            <Text style={styles.successText}>{successMessage}</Text>
+                        </View>
+                    ) : null}
 
                     <InputField
                         label="Email"
                         placeholder="you@example.com"
                         icon="mail-outline"
                         value={email}
-                        onChangeText={setEmail}
+                        onChangeText={(text) => {
+                            setEmail(text);
+                            if (errorMessage) setErrorMessage('');
+                            if (successMessage) setSuccessMessage('');
+                        }}
+                        error={!!errorMessage && !email}
                     />
 
                     <TouchableOpacity
-                        style={styles.sendButton}
-                        onPress={() => navigation.navigate('ResetPassword')}
+                        style={[styles.sendButton, loading && { opacity: 0.7 }]}
+                        onPress={handleSend}
+                        disabled={loading}
                     >
-                        <Text style={styles.sendButtonText}>Send Reset Link</Text>
+                        <Text style={styles.sendButtonText}>
+                            {loading ? 'Sending...' : 'Send Reset Link'}
+                        </Text>
                     </TouchableOpacity>
 
                     <View style={styles.footer}>
@@ -126,6 +187,40 @@ const styles = StyleSheet.create({
         color: '#7C8BA0',
         textAlign: 'center',
         lineHeight: 24,
+    },
+    errorBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FFF5F5',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(233, 64, 87, 0.2)',
+    },
+    errorText: {
+        color: '#E94057',
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 8,
+        flex: 1,
+    },
+    successBanner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F2F9F2',
+        padding: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        borderWidth: 1,
+        borderColor: 'rgba(76, 175, 80, 0.2)',
+    },
+    successText: {
+        color: '#4CAF50',
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 8,
+        flex: 1,
     },
     sendButton: {
         width: '100%',
