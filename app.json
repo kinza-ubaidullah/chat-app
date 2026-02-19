@@ -2,6 +2,7 @@
   "expo": {
     "name": "Dating Advice",
     "slug": "datingadvice",
+    "scheme": "datingadvice",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -39,6 +40,9 @@
     "plugins": [
       "expo-secure-store",
       "@react-native-google-signin/google-signin"
-    ]
+    ],
+    "updates": {
+      "enabled": false
+    }
   }
 }
