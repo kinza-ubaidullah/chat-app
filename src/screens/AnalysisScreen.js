@@ -107,28 +107,18 @@ const AnalysisScreen = ({ navigation }) => {
             });
 
             if (response.ok) {
-                // Fetch default advisor to start chatting with immediately
-                const { data: advisors, error: advisorError } = await supabase
-                    .from('advisors')
-                    .select('*')
-                    .limit(1)
-                    .order('id', { ascending: true }); // Assume first one is main AI
+                // Mark discovery as pending locally so Home can poll
+                await AsyncStorage.setItem('discovery_pending', 'true');
+                await AsyncStorage.setItem('discovery_start_time', Date.now().toString());
 
-                if (advisors && advisors.length > 0) {
-                    const advisor = advisors[0];
-                    // Navigate to chat with "I just completed my profile analysis" context
-                    navigation.replace('ChatDetail', {
-                        id: advisor.id,
-                        name: advisor.name,
-                        image_url: advisor.image_url,
-                        initialContext: "I've just completed my persona analysis. What insights do you have for me?"
-                    });
-                } else {
-                    Alert.alert('Analysis Complete', 'Your profile is updated!');
-                    navigation.replace('Main');
-                }
+                // Navigate to home immediately
+                navigation.replace('Main', { screen: 'Home' });
             } else {
-                throw new Error('Analysis service busy');
+                // If service is busy, still set pending so user doesn't get stuck, 
+                // but inform Home it might need to wait.
+                await AsyncStorage.setItem('discovery_pending', 'true');
+                await AsyncStorage.setItem('discovery_start_time', Date.now().toString());
+                navigation.replace('Main');
             }
 
         } catch (error) {

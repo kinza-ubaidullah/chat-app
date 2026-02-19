@@ -6,13 +6,18 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import Header from '../components/Header';
 import { aboutData } from '../data/aboutData';
 import { LinearGradient } from 'expo-linear-gradient';
+import { supabase } from '../lib/supabase';
 
 const { width } = Dimensions.get('window');
 
 const AboutScreen = ({ navigation }) => {
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+    };
+
     return (
         <ScreenWrapper>
-            <Header onLogout={() => navigation.navigate('Login')} />
+            <Header onLogout={handleLogout} />
             <ScrollView style={styles.container} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
                 {/* Back Button */}
@@ -81,7 +86,7 @@ const AboutScreen = ({ navigation }) => {
                 {/* CTA Section */}
                 <TouchableOpacity
                     style={styles.ctaCard}
-                    onPress={() => navigation.navigate('Home')}
+                    onPress={() => navigation.navigate('Main', { screen: 'Home' })}
                     activeOpacity={0.9}
                 >
                     <LinearGradient

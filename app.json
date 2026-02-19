@@ -1,27 +1,27 @@
 {
   "expo": {
-    "name": "Datingadvice",
+    "name": "Dating Advice",
     "slug": "datingadvice",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FDFCFB"
+      "backgroundColor": "#F8FAFC"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.lovewise.app"
+      "bundleIdentifier": "com.datingadvice.app"
     },
     "android": {
-      "package": "com.lovewise.app",
-      "versionCode": 2,
+      "package": "com.datingadvice.app",
+      "versionCode": 3,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#E94057"
+        "backgroundColor": "#FF4D67"
       },
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "adjustResize"
@@ -32,6 +32,7 @@
     "extra": {
       "supabaseUrl": "https://qtoqmcqiajvpnzwulniy.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF0b3FtY3FpYWp2cG56d3Vsbml5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjY1NjI1MTUsImV4cCI6MjA4MjEzODUxNX0.9lkmvKmHUN0EXUqgc3VHwRhrPBE1SRkytRPZKnicwD0",
+      "apiUrl": "https://datingadvice.io",
       "eas": {
         "projectId": "511afef4-677c-4200-b41c-225177b50abb"
       }

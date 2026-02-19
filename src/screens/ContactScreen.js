@@ -14,7 +14,7 @@ const ContactScreen = ({ navigation }) => {
     const [webhookUrl, setWebhookUrl] = useState(null);
     const [contactInfo, setContactInfo] = useState({
         title: "Get in Touch",
-        email: "support@lovewise.io",
+        email: "support@datingadvice.io",
         address: "123 Heart Street, Relationship City"
     });
 
@@ -41,7 +41,7 @@ const ContactScreen = ({ navigation }) => {
             if (info) {
                 setContactInfo({
                     title: info.title || "Contact Us",
-                    email: info.email || "support@lovewise.io",
+                    email: info.email || "support@datingadvice.io",
                     address: info.office_address || "Virtual Office"
                 });
             }
@@ -129,7 +129,7 @@ const ContactScreen = ({ navigation }) => {
                             <Ionicons name="mail" size={20} color="#2196F3" />
                         </View>
                         <Text style={styles.infoLabel}>Social</Text>
-                        <Text style={styles.infoValue}>@lovewise_ai</Text>
+                        <Text style={styles.infoValue}>@datingadvice_ai</Text>
                     </View>
                 </View>
 

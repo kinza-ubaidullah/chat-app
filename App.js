@@ -20,7 +20,7 @@ import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import ResetPasswordScreen from './src/screens/ResetPasswordScreen';
 import OTPScreen from './src/screens/OTPScreen';
 import HomeScreen from './src/screens/HomeScreen';
-import ChatListScreen from './src/screens/ChatListScreen';
+import AdvisorsScreen from './src/screens/AdvisorsScreen';
 import ChatDetailScreen from './src/screens/ChatDetailScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
@@ -33,6 +33,9 @@ import BlogsScreen from './src/screens/BlogsScreen';
 import BlogPostScreen from './src/screens/BlogPostScreen';
 import SuccessStoriesScreen from './src/screens/SuccessStoriesScreen';
 import LoadingScreen from './src/screens/LoadingScreen';
+import LegalScreen from './src/screens/LegalScreen';
+import CreditTopupScreen from './src/screens/CreditTopupScreen';
+
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -45,20 +48,18 @@ function MainTabs() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: '#ADAFBB',
+        tabBarInactiveTintColor: Colors.muted,
         tabBarHideOnKeyboard: Platform.OS !== 'web',
         tabBarStyle: {
           height: Platform.OS === 'ios' ? 88 : 70, // Standard height
           paddingBottom: Platform.OS === 'ios' ? 28 : 10,
           paddingTop: 10,
           backgroundColor: Colors.white,
-          borderTopWidth: 1,
-          borderTopColor: '#F0F0F0',
-          elevation: 8,
-          shadowColor: '#000',
+          shadowColor: Colors.secondary,
           shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          borderTopWidth: 0,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -75,10 +76,11 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Chat"
-        component={ChatListScreen}
+        name="Advisors"
+        component={AdvisorsScreen}
         options={{
-          tabBarIcon: ({ color, size }) => <Ionicons name="chatbubble" size={size} color={color} />
+          tabBarIcon: ({ color, size }) => <Ionicons name="people" size={size} color={color} />,
+          tabBarLabel: 'Advisors'
         }}
       />
       <Tab.Screen
@@ -110,7 +112,7 @@ export default function App() {
     }
 
     const loadApp = async () => {
-      const minLoadTime = new Promise(resolve => setTimeout(resolve, 5000));
+      const minLoadTime = new Promise(resolve => setTimeout(resolve, 2000));
       const sessionCheck = supabase.auth.getSession().catch(err => {
         console.error('Session error:', err);
         return { data: { session: null } };
@@ -136,16 +138,18 @@ export default function App() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#FDFCFB', justifyContent: 'center', alignItems: 'center' }}>
-        <LoadingScreen message="Initializing session..." />
-      </View>
+      <SafeAreaProvider style={{ flex: 1, backgroundColor: Colors.background }}>
+        <View style={{ flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center', minHeight: Platform.OS === 'web' ? '100vh' : '100%' }}>
+          <LoadingScreen message="Initializing session..." />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <SafeAreaProvider style={{ flex: 1, backgroundColor: '#FDFCFB' }}>
+    <SafeAreaProvider style={{ flex: 1, backgroundColor: Colors.background }}>
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
-      <View style={{ flex: 1, backgroundColor: '#FDFCFB' }}>
+      <View style={{ flex: 1, backgroundColor: Colors.background, minHeight: Platform.OS === 'web' ? '100vh' : '100%' }}>
         <NavigationContainer>
           <Stack.Navigator
             screenOptions={{
@@ -166,6 +170,7 @@ export default function App() {
                 <Stack.Screen name="Blogs" component={BlogsScreen} />
                 <Stack.Screen name="BlogPost" component={BlogPostScreen} />
                 <Stack.Screen name="SuccessStories" component={SuccessStoriesScreen} />
+                <Stack.Screen name="CreditTopup" component={CreditTopupScreen} />
               </>
             ) : (
               /* Auth Flow */
@@ -178,6 +183,7 @@ export default function App() {
                 <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
               </>
             )}
+            <Stack.Screen name="Legal" component={LegalScreen} />
           </Stack.Navigator>
         </NavigationContainer>
       </View>

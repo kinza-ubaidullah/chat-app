@@ -61,7 +61,7 @@ const LoadingScreen = ({ message = "Loading your experience..." }) => {
                     </LinearGradient>
                 </Animated.View>
 
-                <Text style={styles.title}>Datingadvice</Text>
+                <Text style={styles.title}>Dating Advice</Text>
                 <View style={styles.messageContainer}>
                     <Text style={styles.message}>{message}</Text>
                     <View style={styles.dots}>
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 32,
         fontWeight: '900',
-        color: Colors.text,
+        color: Colors.secondary,
         marginBottom: 10,
         fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     },

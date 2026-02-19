@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import OnboardingModal from '../components/OnboardingModal';
 import AnalysisResultModal from '../components/AnalysisResultModal';
 import VoiceCallModal from '../components/VoiceCallModal';
+import TopUpModal from '../components/TopUpModal';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -19,6 +20,7 @@ const HomeScreen = ({ navigation }) => {
     const [showOnboarding, setShowOnboarding] = useState(false);
     const [showAnalysisResult, setShowAnalysisResult] = useState(false);
     const [showVoiceModal, setShowVoiceModal] = useState(false);
+    const [showTopUpModal, setShowTopUpModal] = useState(false);
     const [selectedAdvisorForVoice, setSelectedAdvisorForVoice] = useState(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [usage, setUsage] = useState(null);
@@ -144,7 +146,7 @@ const HomeScreen = ({ navigation }) => {
                     if (profileData && profileData.welcome_email_sent === false && !welcomeEmailTriggered.current) {
                         welcomeEmailTriggered.current = true;
                         // Attempt to trigger welcome email (silently)
-                        const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000';
+                        const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://datingadvice.io';
                         fetch(`${apiUrl}/api/notifications/welcome`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -241,13 +243,7 @@ const HomeScreen = ({ navigation }) => {
                         if (advisor) {
                             AsyncStorage.removeItem('should_auto_chat');
                             console.log('Opening chat with recommended advisor:', advisor.name);
-                            navigation.navigate('ChatDetail', {
-                                name: advisor.name,
-                                id: advisor.id,
-                                image_url: advisor.image_url,
-                                specialty: advisor.specialty,
-                                initialContext: "I've just completed my persona discovery. I'm ready for your advice!"
-                            });
+                            navigation.navigate('ChatDetail', { advisor });
                         }
                     }
                 });
@@ -290,23 +286,13 @@ const HomeScreen = ({ navigation }) => {
         );
 
         if (advisor) {
-            navigation.navigate('ChatDetail', {
-                name: advisor.name,
-                id: advisor.id,
-                image_url: advisor.image_url,
-                specialty: advisor.specialty
-            });
+            navigation.navigate('ChatDetail', { advisor });
         } else {
             // Fallback if no match found
             Alert.alert('Advisor lookup', `We couldn't find ${name} in our database, but you can chat with our lead expert.`);
             const lead = advisors.find(a => a.name === 'Maya') || advisors[0];
             if (lead) {
-                navigation.navigate('ChatDetail', {
-                    name: lead.name,
-                    id: lead.id,
-                    image_url: lead.image_url,
-                    specialty: lead.specialty
-                });
+                navigation.navigate('ChatDetail', { advisor: lead });
             }
         }
     };
@@ -320,7 +306,6 @@ const HomeScreen = ({ navigation }) => {
                     <Text style={styles.userName}>
                         Welcome back, {user?.profile?.full_name?.split(' ')[0] || user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User'}!
                     </Text>
-                    <Text style={styles.wavingHand}>👋</Text>
                     <Text style={styles.bannerSubtitle}>Ready to connect with your advisor today?</Text>
                 </View>
 
@@ -341,7 +326,7 @@ const HomeScreen = ({ navigation }) => {
                     activeOpacity={0.9}
                 >
                     <LinearGradient
-                        colors={analysisError ? ['#4A1212', '#2D1212'] : ['#12172D', '#2D3455']}
+                        colors={analysisError ? ['#4A1212', '#2D1212'] : ['#0F172A', '#1E293B']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 1 }}
                         style={styles.analysisGradient}
@@ -387,24 +372,24 @@ const HomeScreen = ({ navigation }) => {
                         style={styles.card}
                         onPress={() => navigation.navigate('Subscription')}
                     >
-                        <View style={[styles.iconCircle, { backgroundColor: '#FDF1F3' }]}>
-                            <Ionicons name="card" size={20} color={Colors.primary} />
+                        <View style={[styles.iconCircle, { backgroundColor: '#F0F9FF' }]}>
+                            <Ionicons name="card" size={20} color="#0EA5E9" />
                         </View>
                         <Text style={styles.cardLabel}>Plan</Text>
                         <Text style={styles.cardValue}>{usage?.plan_type || 'Free'}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Subscription')}>
-                        <View style={[styles.iconCircle, { backgroundColor: '#EFFFF4' }]}>
-                            <Ionicons name="chatbubble-ellipses" size={20} color="#4CAF50" />
+                        <View style={[styles.iconCircle, { backgroundColor: '#F0FDF4' }]}>
+                            <Ionicons name="chatbubble-ellipses" size={20} color="#10B981" />
                         </View>
                         <Text style={styles.cardLabel}>Chat</Text>
                         <Text style={styles.cardValue}>{usage?.messages_left || 0}</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('Subscription')}>
-                        <View style={[styles.iconCircle, { backgroundColor: '#E3F2FD' }]}>
-                            <Ionicons name="call" size={20} color="#2196F3" />
+                        <View style={[styles.iconCircle, { backgroundColor: '#F5F3FF' }]}>
+                            <Ionicons name="call" size={20} color="#7C3AED" />
                         </View>
                         <Text style={styles.cardLabel}>Voice</Text>
                         <Text style={styles.cardValue}>{usage?.voice_minutes_left || 0}m</Text>
@@ -427,12 +412,7 @@ const HomeScreen = ({ navigation }) => {
                         <TouchableOpacity
                             key={advisor.id}
                             style={styles.advisorCard}
-                            onPress={() => navigation.navigate('ChatDetail', {
-                                name: advisor.name,
-                                id: advisor.id,
-                                image_url: advisor.image_url,
-                                specialty: advisor.specialty
-                            })}
+                            onPress={() => navigation.navigate('ChatDetail', { advisor })}
                         >
                             <View style={styles.advisorInfo}>
                                 <View style={styles.avatarContainer}>
@@ -445,8 +425,8 @@ const HomeScreen = ({ navigation }) => {
                                     <Text style={styles.advisorName}>{advisor.name}</Text>
                                     <Text style={styles.advisorTitle}>{advisor.specialty}</Text>
                                     <View style={styles.ratingRow}>
-                                        <Ionicons name="star" size={14} color="#FFB800" />
-                                        <Text style={styles.ratingText}>{advisor.rating} (Verified)</Text>
+                                        <Ionicons name="star" size={14} color={Colors.gold} />
+                                        <Text style={styles.ratingText}>{advisor.rating} (Verified Expert)</Text>
                                     </View>
                                 </View>
                             </View>
@@ -455,7 +435,7 @@ const HomeScreen = ({ navigation }) => {
                                     style={styles.callIconBtn}
                                     onPress={() => {
                                         setSelectedAdvisorForVoice(advisor);
-                                        setShowVoiceModal(true);
+                                        setShowTopUpModal(true);
                                     }}
                                 >
                                     <Ionicons name="call" size={18} color="#FFF" />
@@ -491,6 +471,18 @@ const HomeScreen = ({ navigation }) => {
                 onClose={() => setShowVoiceModal(false)}
                 advisor={selectedAdvisorForVoice}
                 userId={user?.id}
+                onRequireTopUp={() => {
+                    setShowVoiceModal(false);
+                    setShowTopUpModal(true);
+                }}
+            />
+
+            <TopUpModal
+                visible={showTopUpModal}
+                onClose={() => setShowTopUpModal(false)}
+                onTopUp={() => navigation.navigate('CreditTopup')}
+                onStartCall={() => setShowVoiceModal(true)}
+                minutesBalance={usage?.voice_minutes_left || 0}
             />
 
         </ScreenWrapper>
@@ -505,13 +497,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
     },
     banner: {
-        backgroundColor: Colors.primaryLight,
-        borderRadius: 30,
-        padding: 25,
-        marginTop: 20,
-        marginBottom: 25,
-        borderWidth: 1,
-        borderColor: '#FAD1D7',
+        backgroundColor: 'transparent',
+        paddingVertical: 30,
+        marginBottom: 10,
     },
     analysisCard: {
         borderRadius: 20,

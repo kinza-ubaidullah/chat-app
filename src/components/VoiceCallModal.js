@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/colors';
 import { supabase } from '../lib/supabase';
 
+import { fetchSystemSetting, fetchUserUsage, updateUserUsage } from '../lib/dataService';
+
 // Conditional import for native-only Vapi SDK
 let Vapi = null;
 try {
@@ -14,7 +16,7 @@ try {
     console.log('Vapi module failed to load:', e);
 }
 
-const VoiceCallModal = ({ visible, onClose, advisor, userId }) => {
+const VoiceCallModal = ({ visible, onClose, advisor, userId, onRequireTopUp }) => {
     const [status, setStatus] = useState('ready'); // ready, connecting, active, ended
     const [duration, setDuration] = useState(0);
     const [usage, setUsage] = useState(null);
@@ -36,21 +38,15 @@ const VoiceCallModal = ({ visible, onClose, advisor, userId }) => {
 
     const setupVapi = async () => {
         try {
-            const { data: settings } = await supabase
-                .from('system_settings')
-                .select('key_value')
-                .eq('key_name', 'VAPI_PUBLIC_KEY')
-                .single();
-
-            const publicKey = settings?.key_value || process.env.EXPO_PUBLIC_VAPI_PUBLIC_KEY;
+            const publicKey = await fetchSystemSetting('VAPI_PUBLIC_KEY') || process.env.EXPO_PUBLIC_VAPI_PUBLIC_KEY;
 
             if (!publicKey) {
-                console.error("Vapi Public Key missing in system_settings");
+                console.error("Vapi Public Key missing");
                 return;
             }
 
             if (!Vapi) {
-                console.log("Vapi SDK not available on this platform");
+                console.log("Vapi SDK not available");
                 return;
             }
             const vapiInstance = new Vapi(publicKey);
@@ -66,27 +62,16 @@ const VoiceCallModal = ({ visible, onClose, advisor, userId }) => {
                 stopTimer();
 
                 // Deduct minutes based on actual duration (Website Logic)
-                setDuration(currentDur => {
-                    if (currentDur > 0) {
-                        const minsUsed = currentDur / 60;
-                        supabase.from('user_usage')
-                            .select('voice_minutes_left')
-                            .eq('user_id', userId)
-                            .single()
-                            .then(({ data }) => {
-                                if (data) {
-                                    supabase.from('user_usage')
-                                        .update({
-                                            voice_minutes_left: Math.max(0, data.voice_minutes_left - minsUsed),
-                                            updated_at: new Date().toISOString()
-                                        })
-                                        .eq('user_id', userId)
-                                        .then(() => console.log(`Deducted ${minsUsed.toFixed(2)} mins`));
-                                }
-                            });
+                const finalDuration = duration;
+                if (finalDuration > 0) {
+                    const minsUsed = finalDuration / 60;
+                    const currentUserUsage = await fetchUserUsage(userId);
+                    if (currentUserUsage) {
+                        await updateUserUsage(userId, {
+                            voice_minutes_left: Math.max(0, currentUserUsage.voice_minutes_left - minsUsed)
+                        });
                     }
-                    return currentDur;
-                });
+                }
 
                 setTimeout(onClose, 1500);
             });
@@ -94,7 +79,6 @@ const VoiceCallModal = ({ visible, onClose, advisor, userId }) => {
             vapiInstance.on('error', (e) => {
                 console.error('Vapi Error:', e);
                 setStatus('ready');
-                alert("Connection error occurred.");
             });
 
             setVapi(vapiInstance);
@@ -104,7 +88,7 @@ const VoiceCallModal = ({ visible, onClose, advisor, userId }) => {
     };
 
     const fetchUsage = async () => {
-        const { data } = await supabase.from('user_usage').select('*').eq('user_id', userId).single();
+        const data = await fetchUserUsage(userId);
         if (data) setUsage(data);
     };
 
@@ -133,9 +117,17 @@ const VoiceCallModal = ({ visible, onClose, advisor, userId }) => {
             return;
         }
 
-        if (usage?.voice_minutes_left <= 0.1) {
-            alert("No minutes left. Please top up.");
-            onClose();
+        // Fresh usage check like web
+        const freshUsage = await fetchUserUsage(userId);
+        const currentMinutes = freshUsage?.voice_minutes_left ?? 0;
+
+        if (currentMinutes <= 0.1) {
+            if (onRequireTopUp) {
+                onRequireTopUp();
+            } else {
+                alert("No minutes left. Please top up.");
+                onClose();
+            }
             return;
         }
 
@@ -145,17 +137,14 @@ const VoiceCallModal = ({ visible, onClose, advisor, userId }) => {
         }
 
         setStatus('connecting');
-
-        // Advisor ID logic
+        const maxDurationSeconds = Math.floor(currentMinutes * 60);
         const assistantId = advisor.vapi_assistant_id || 'default-id';
 
         try {
+            // Align with ConsultationPage.tsx
             vapi.start(assistantId, {
-                assistant: {
-                    variableValues: {
-                        userName: "User", // Can be extended
-                    }
-                }
+                variableValues: { user_id: userId },
+                maxDurationSeconds: maxDurationSeconds
             });
         } catch (e) {
             console.error("Vapi Start Error:", e);

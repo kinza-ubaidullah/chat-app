@@ -62,10 +62,11 @@ const LoginScreen = ({ navigation }) => {
         <ScreenWrapper style={{ paddingTop: 0 }}>
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <LinearGradient
-                    colors={['#FF9A9E', '#FAD0C4', '#F7F3EE']}
+                    colors={['#F8FAFC', '#F1F5F9', '#E2E8F0']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.container}
@@ -93,7 +94,7 @@ const LoginScreen = ({ navigation }) => {
                             {/* Error Message Display */}
                             {errorMessage ? (
                                 <View style={styles.errorBanner}>
-                                    <Ionicons name="alert-circle" size={20} color="#E94057" />
+                                    <Ionicons name="alert-circle" size={20} color={Colors.error} />
                                     <Text style={styles.errorText}>{errorMessage}</Text>
                                 </View>
                             ) : null}
@@ -159,7 +160,7 @@ const LoginScreen = ({ navigation }) => {
                                 activeOpacity={0.8}
                             >
                                 <LinearGradient
-                                    colors={['#E94057', '#F27121']}
+                                    colors={['#0F172A', '#1E293B']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 0 }}
                                     style={styles.loginGradient}
@@ -200,123 +201,131 @@ const styles = StyleSheet.create({
         marginBottom: 40,
     },
     logoCircle: {
-        width: 96,
-        height: 96,
+        width: 100,
+        height: 100,
         borderRadius: 40,
-        backgroundColor: 'rgba(255, 255, 255, 0.4)',
+        backgroundColor: Colors.white,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#E94057',
+        shadowColor: Colors.secondary,
         shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.1,
         shadowRadius: 20,
         elevation: 10,
     },
     logoHeart: {
         fontSize: 48,
-        color: '#E94057',
+        color: Colors.primary,
     },
     card: {
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        borderRadius: 32,
-        padding: 32,
-        shadowColor: '#000',
+        backgroundColor: Colors.white,
+        borderRadius: 35,
+        padding: 30,
+        shadowColor: Colors.secondary,
         shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.1,
         shadowRadius: 30,
         elevation: 15,
     },
     header: {
-        marginBottom: 32,
+        marginBottom: 35,
     },
     title: {
-        fontSize: 36,
-        fontWeight: '800',
-        color: '#12172D',
+        fontSize: 34,
+        fontWeight: '900',
+        color: Colors.secondary,
         marginBottom: 8,
+        fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     },
     subtitle: {
-        fontSize: 15,
-        color: '#666',
-        opacity: 0.7,
+        fontSize: 16,
+        color: Colors.textSecondary,
+        fontWeight: '500',
     },
     inputContainer: {
         marginBottom: 16,
     },
     input: {
-        backgroundColor: '#F7F8FA',
-        borderRadius: 16,
+        backgroundColor: Colors.inputBackground,
+        borderRadius: 18,
         paddingHorizontal: 20,
-        paddingVertical: 16,
+        paddingVertical: 18,
         fontSize: 16,
-        color: '#12172D',
-        borderWidth: 1,
+        color: Colors.text,
+        borderWidth: 1.5,
         borderColor: 'transparent',
     },
     inputError: {
-        borderColor: '#E94057',
-        backgroundColor: '#FFF5F5',
+        borderColor: Colors.error,
+        backgroundColor: Colors.error + '10',
     },
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#F7F8FA',
-        borderRadius: 16,
+        backgroundColor: Colors.inputBackground,
+        borderRadius: 18,
         paddingHorizontal: 20,
-        borderWidth: 1,
+        borderWidth: 1.5,
         borderColor: 'transparent',
     },
     passwordInput: {
         flex: 1,
-        paddingVertical: 16,
+        paddingVertical: 18,
         fontSize: 16,
-        color: '#12172D',
+        color: Colors.text,
     },
     eyeIcon: {
         padding: 4,
     },
     forgotContainer: {
         alignItems: 'flex-end',
-        marginBottom: 24,
+        marginBottom: 30,
     },
     forgotText: {
         fontSize: 14,
-        color: '#666',
-        fontWeight: '600',
+        color: Colors.textSecondary,
+        fontWeight: '700',
     },
     errorBanner: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFF5F5',
-        padding: 12,
-        borderRadius: 12,
+        backgroundColor: Colors.error + '10',
+        padding: 15,
+        borderRadius: 15,
         marginBottom: 20,
         borderWidth: 1,
-        borderColor: 'rgba(233, 64, 87, 0.2)',
+        borderColor: Colors.error + '40',
     },
     errorText: {
-        color: '#E94057',
-        fontSize: 13,
-        fontWeight: '600',
-        marginLeft: 8,
+        color: Colors.error,
+        fontSize: 14,
+        fontWeight: '700',
+        marginLeft: 10,
         flex: 1,
     },
     loginButton: {
-        borderRadius: 16,
+        borderRadius: 20,
         overflow: 'hidden',
-        marginBottom: 24,
+        marginBottom: 25,
+        shadowColor: Colors.secondary,
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 15,
+        elevation: 8,
     },
     loginButtonDisabled: {
         opacity: 0.6,
     },
     loginGradient: {
-        paddingVertical: 18,
+        paddingVertical: 20,
         alignItems: 'center',
     },
     loginButtonText: {
-        color: '#fff',
-        fontSize: 17,
-        fontWeight: '800',
+        color: Colors.white,
+        fontSize: 18,
+        fontWeight: '900',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
     },
     signupContainer: {
         flexDirection: 'row',
@@ -325,12 +334,13 @@ const styles = StyleSheet.create({
     },
     signupText: {
         fontSize: 14,
-        color: '#666',
+        color: Colors.textSecondary,
+        fontWeight: '500',
     },
     signupLink: {
         fontSize: 14,
-        color: '#E94057',
-        fontWeight: '800',
+        color: Colors.primary,
+        fontWeight: '900',
     },
 });
 

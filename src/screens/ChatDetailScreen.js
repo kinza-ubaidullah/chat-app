@@ -1,537 +1,289 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, KeyboardAvoidingView, Platform, SafeAreaView, ActivityIndicator, Alert, Image } from 'react-native';
-import { Colors } from '../theme/colors';
+import React, { useEffect, useState, useRef } from 'react';
+import {
+    View, Text, StyleSheet, ScrollView, TextInput,
+    TouchableOpacity, KeyboardAvoidingView, Platform, Image, SafeAreaView, ActivityIndicator, Alert
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ScreenWrapper from '../components/ScreenWrapper';
 import { supabase } from '../lib/supabase';
+import { fetchSystemSetting, fetchUserUsage, fetchChatHistory } from '../lib/dataService';
 import VoiceCallModal from '../components/VoiceCallModal';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import TopUpModal from '../components/TopUpModal';
 
 const ChatDetailScreen = ({ route, navigation }) => {
-    const { name, id: advisorId, image_url, initialContext } = route.params || { name: 'Advisor', id: null }; // Added image_url and initialContext
-    const [message, setMessage] = useState(initialContext || ''); // Pre-fill if context provided as message text? Or just logic.
-    const [userProfile, setUserProfile] = useState(null);
-    const [isTyping, setIsTyping] = useState(false);
-
-    // Missing state variables
+    const { advisor } = route.params;
     const [messages, setMessages] = useState([]);
-    const [currentUser, setCurrentUser] = useState(null);
-    const [n8nApiKey, setN8nApiKey] = useState(null);
-    const [userUsage, setUserUsage] = useState(null);
-    const [error, setError] = useState(null);
+    const [input, setInput] = useState("");
+    const [isTyping, setIsTyping] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [showVoiceModal, setShowVoiceModal] = useState(false);
+
+    const [n8nApiKey, setN8nApiKey] = useState("");
+    const [usage, setUsage] = useState(null);
+    const [userId, setUserId] = useState(null);
+    const [userName, setUserName] = useState('User');
+    const [showCallModal, setShowCallModal] = useState(false);
+    const [showTopUpModal, setShowTopUpModal] = useState(false);
     const scrollViewRef = useRef();
 
+    // 1. DATA FETCHING: Align with ConsultationPage.tsx
     useEffect(() => {
-        let channel;
-
-        const initializeChat = async () => {
+        const initChat = async () => {
             try {
-                // 1. Get current user session
-                const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+                const { data: { session } } = await supabase.auth.getSession();
+                if (!session) return navigation.navigate('Login');
 
-                if (sessionError || !session) {
-                    Alert.alert('Authentication Required', 'Please log in to chat');
-                    navigation.navigate('Login');
-                    return;
+                setUserId(session.user.id);
+
+                const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+                const [apiKey, userUsage, history, profileRes] = await Promise.all([
+                    fetchSystemSetting("N8N_API_KEY"),
+                    fetchUserUsage(session.user.id),
+                    fetchChatHistory(session.user.id, advisor.id, twentyFourHoursAgo),
+                    supabase.from('profiles').select('full_name').eq('id', session.user.id).maybeSingle()
+                ]);
+
+                if (apiKey) setN8nApiKey(apiKey);
+                if (userUsage) setUsage(userUsage);
+                if (profileRes.data?.full_name) setUserName(profileRes.data.full_name.split(' ')[0]);
+
+                // Sync history - If history exists, AI will remember via sessionId
+                if (history && history.length > 0) {
+                    setMessages(history);
                 }
-
-                setCurrentUser(session.user);
-
-                // 2. Fetch User Profile & Persona (DEEP INTEGRATION)
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('full_name, persona_analysis')
-                    .eq('id', session.user.id)
-                    .single();
-
-                setUserProfile(profile);
-
-                // 3. Fetch n8n API key from system_settings
-                const { data: n8nData } = await supabase
-                    .from('system_settings')
-                    .select('key_value')
-                    .eq('key_name', 'N8N_API_KEY')
-                    .single();
-
-                if (n8nData?.key_value) setN8nApiKey(n8nData.key_value);
-
-                // 4. Fetch user usage/credits
-                const { data: usageData } = await supabase
-                    .from('user_usage')
-                    .select('*')
-                    .eq('user_id', session.user.id)
-                    .single();
-
-                if (usageData) setUserUsage(usageData);
-
-                // 5. Fetch chat history (Most recent 50 messages)
-                const { data: historyData, error: fetchError } = await supabase
-                    .from('chat_history')
-                    .select('*')
-                    .eq('user_id', session.user.id)
-                    .eq('advisor_id', advisorId)
-                    .order('created_at', { ascending: true })
-                    .limit(50);
-
-                if (fetchError) {
-                    setError('Failed to load chat history.');
-                } else if (historyData && historyData.length > 0) {
-                    setMessages(historyData);
-                } else {
-                    // Personalized Welcome message based on analysis
-                    let welcomeContent = `Hey! I'm ${name}. I've got your records open. What's the latest update in your dating world?`;
-
-                    if (profile?.persona_analysis && Object.keys(profile.persona_analysis).length > 0) {
-                        const style = profile.persona_analysis.dating_style || "interesting";
-                        welcomeContent = `Hey! I'm ${name}. I've just reviewed your analysis and your ${style} style is quite unique! How can I help you sharpen your strategy today?`;
-                    }
-
-                    setMessages([{
-                        id: 'welcome',
-                        role: 'ai',
-                        content: welcomeContent,
-                        created_at: new Date().toISOString()
-                    }]);
-                }
-
-                setLoading(false);
-
-                // 6. Realtime Listener REMOVED to match website flow (Request/Response)
-                // We now handle state updates manually in handleSend.
-
             } catch (err) {
-                console.error('Chat init error:', err);
-                setError('Failed to initialize chat.');
+                console.error("Chat init error:", err);
+            } finally {
                 setLoading(false);
             }
         };
+        initChat();
+    }, [advisor.id]);
 
-        initializeChat();
+    // 2. LOGIC: Handle Send Message (Fixing the Introduction Loop + Persistence)
+    const handleSendMessage = async () => {
+        if (!input.trim() || isTyping || !advisor) return;
 
-        return () => {
-            // Cleanup if needed
-        };
-    }, [advisorId]);
-
-    const handleSend = async () => {
-        if (!message.trim() || !currentUser || !advisorId) return;
-
-        const messageText = message.trim();
-        setMessage('');
-
-        // 1. Credit Check
-        const totalCredits = (userUsage?.messages_left || 0) + (userUsage?.custom_messages_balance || 0);
+        // Check Credits (Matches Web Line 252)
+        const totalCredits = (usage?.messages_left || 0) + (usage?.custom_messages_balance || 0);
         if (totalCredits <= 0) {
-            Alert.alert('Out of Credits', "Please top up to continue.", [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Top Up', onPress: () => navigation.navigate('Subscription') }
-            ]);
-            setMessage(messageText);
+            Alert.alert("Limit Reached", "Please top up your credits to continue.");
             return;
         }
 
-        // 2. Optimistic UI update for USER message
-        const tempUserMsg = {
-            id: `temp_${Date.now()}`,
-            role: 'user',
-            content: messageText,
-            created_at: new Date().toISOString()
-        };
-        setMessages(prev => [...prev, tempUserMsg]);
+        const text = input.trim();
+        if (!userId) return;
+
+        const userMsg = { role: "user", content: text };
+        const updatedMessages = [...messages, userMsg];
+
+        setInput(""); // Clear input immediately
+        setMessages(updatedMessages);
         setIsTyping(true);
 
         try {
-            // 3. Save User Message to DB
-            const { error: saveError } = await supabase
-                .from('chat_history')
-                .insert({
-                    user_id: currentUser.id,
-                    advisor_id: advisorId,
-                    role: 'user',
-                    content: messageText
-                });
+            /**
+             * THE PERMANENT FIX:
+             * 1. sessionId & chatId: Ensuring unique identifiers for memory.
+             * 2. History: Sending previous messages directly to the agent in a clean format.
+             * 3. Persistence: Manual entry to chat_history table.
+             */
+            const sessionId = `${userId}_${advisor.id}`;
 
-            // 3b. Deduct Credit (Website Logic)
-            if (userUsage?.messages_left > 0) {
-                await supabase.from('user_usage').update({
-                    messages_left: userUsage.messages_left - 1,
-                    updated_at: new Date().toISOString()
-                }).eq('user_id', currentUser.id);
-            } else if (userUsage?.custom_messages_balance > 0) {
-                await supabase.from('user_usage').update({
-                    custom_messages_balance: userUsage.custom_messages_balance - 1,
-                    updated_at: new Date().toISOString()
-                }).eq('user_id', currentUser.id);
-            }
+            // Map history to standard format for AI nodes
+            const historyPayload = updatedMessages.slice(-10).map(m => ({
+                role: m.role === 'ai' ? 'assistant' : 'user',
+                content: m.content
+            }));
 
-            if (saveError) {
-                console.error('Error saving user message:', saveError);
-            }
-
-            // 4. Fetch Advisor Webhook
-            const { data: advisorData } = await supabase
-                .from('advisors')
-                .select('n8n_webhook_path')
-                .eq('id', advisorId)
-                .single();
-
-            if (!advisorData?.n8n_webhook_path) {
-                throw new Error('Advisor Webhook not configured in database');
-            }
-
-            // 5. Trigger n8n with Website's exact Header and Payload
-            const response = await fetch(advisorData.n8n_webhook_path, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-N8N-API-KEY': n8nApiKey || ""
-                },
-                body: JSON.stringify({
-                    message: messageText,
-                    agentId: advisorId,
-                    userId: currentUser.id,
-                    advisorName: name
-                })
+            // Save User Message to Supabase
+            supabase.from("chat_history").insert([
+                { user_id: userId, advisor_id: advisor.id, role: 'user', content: text }
+            ]).then(({ error }) => {
+                if (error) console.log("User history sync error:", error);
             });
 
-            if (!response.ok) {
-                throw new Error(`Server responded with ${response.status}`);
+            const res = await fetch(advisor.n8n_webhook_path, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-N8N-API-KEY": n8nApiKey
+                },
+                body: JSON.stringify({
+                    message: text,
+                    chatInput: text,
+                    agentId: advisor.id,
+                    userId: userId,
+                    advisorName: advisor.name,
+                    userName: userName,
+                    sessionId: sessionId,
+                    chatId: sessionId,
+                    history: historyPayload // context-aware memory
+                }),
+            });
+
+            const aiData = await res.json();
+            const aiContent = aiData?.output || aiData?.message || aiData?.text || aiData?.response;
+
+            // Update UI & Persist AI Response
+            if (aiContent) {
+                setMessages(prev => [...prev, { role: "ai", content: aiContent }]);
+
+                supabase.from("chat_history").insert([
+                    { user_id: userId, advisor_id: advisor.id, role: 'ai', content: aiContent }
+                ]).then(({ error }) => {
+                    if (error) console.log("AI history sync error:", error);
+                });
             }
 
-            const aiResponse = await response.json();
-
-            // 6. Handle AI Response (Expecting { output: "..." })
-            const responseText = aiResponse.output || aiResponse.text || (typeof aiResponse === 'string' ? aiResponse : null);
-
-            if (responseText) {
-                const aiMsg = {
-                    id: `ai_${Date.now()}`,
-                    role: 'ai',
-                    content: responseText,
-                    created_at: new Date().toISOString()
-                };
-
-                setMessages(prev => [...prev, aiMsg]);
-                setIsTyping(false);
-                setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
-
-                // Save AI message to DB
-                await supabase
-                    .from('chat_history')
-                    .insert({
-                        user_id: currentUser.id,
-                        advisor_id: advisorId,
-                        role: 'ai',
-                        content: responseText
-                    });
-
-                // Refresh usage
-                const { data: updatedUsage } = await supabase
-                    .from('user_usage')
-                    .select('*')
-                    .eq('user_id', currentUser.id)
-                    .single();
-                if (updatedUsage) setUserUsage(updatedUsage);
-            } else {
-                console.error('Unexpected AI response format:', aiResponse);
-                throw new Error('Invalid AI response format');
-            }
+            // Sync Usage immediately like web
+            const updatedUsage = await fetchUserUsage(userId);
+            if (updatedUsage) setUsage(updatedUsage);
 
         } catch (err) {
-            console.error('Send error:', err);
+            console.log("Chat Error:", err);
+            setMessages(prev => [...prev, { role: "ai", content: "⚠️ Connection to advisor timed out. Please try again." }]);
+        } finally {
             setIsTyping(false);
-
-            // Add error system message
-            setMessages(prev => [...prev, {
-                id: `err_${Date.now()}`,
-                role: 'ai',
-                content: "⚠️ Connection error. Please try again.",
-                created_at: new Date().toISOString()
-            }]);
         }
     };
 
-    const insets = useSafeAreaInsets();
+    if (loading) return <View style={styles.center}><ActivityIndicator color={Colors.primary} size="large" /></View>;
 
     return (
-        <ScreenWrapper>
-            <KeyboardAvoidingView
-                style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-            >
-                <View style={styles.chatHeader}>
+        <View style={styles.container}>
+            {/* Premium Header (Website Aesthetics) */}
+            <SafeAreaView style={styles.headerSafeArea}>
+                <View style={styles.header}>
                     <View style={styles.headerLeft}>
-                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-                            <Ionicons name="chevron-back" size={24} color="#FFF" />
-                        </TouchableOpacity>
-                        <View style={styles.headerAvatarContainer}>
-                            {image_url ? (
-                                <Image source={{ uri: image_url }} style={styles.headerAvatar} />
-                            ) : (
-                                <View style={[styles.headerAvatar, { alignItems: 'center', justifyContent: 'center', backgroundColor: '#333' }]}>
-                                    <Ionicons name="person" size={20} color="#ADAFBB" />
-                                </View>
-                            )}
-                            <View style={styles.onlineStatus} />
-                        </View>
+                        <TouchableOpacity onPress={() => navigation.goBack()}><Ionicons name="chevron-back" size={24} color={Colors.white} /></TouchableOpacity>
+                        <Image source={{ uri: advisor.image_url }} style={styles.avatar} />
                         <View>
-                            <Text style={styles.headerName}>{name}</Text>
-                            <View style={styles.specialtyContainer}>
+                            <Text style={styles.name}>{advisor.name}</Text>
+                            <View style={styles.badge}>
                                 <Ionicons name="sparkles" size={10} color={Colors.primary} />
-                                <Text style={styles.headerTitle}>{route.params?.specialty || 'Advisor'}</Text>
+                                <Text style={styles.badgeText}>{advisor.specialty}</Text>
                             </View>
                         </View>
                     </View>
-                    <View style={styles.headerActions}>
-                        <TouchableOpacity
-                            style={styles.actionBtn}
-                            onPress={() => setShowVoiceModal(true)}
-                        >
-                            <Ionicons name="call" size={20} color="#FFF" />
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity style={styles.callCircle} onPress={() => setShowTopUpModal(true)}>
+                        <Ionicons name="call" size={18} color={Colors.white} />
+                    </TouchableOpacity>
                 </View>
+            </SafeAreaView>
 
-                {/* Messages Area */}
-                {loading ? (
-                    <View style={{ flex: 1, justifyContent: 'center' }}>
-                        <ActivityIndicator color={Colors.primary} size="large" />
-                    </View>
-                ) : error ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                        <Ionicons name="alert-circle-outline" size={64} color="#FF6B6B" />
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#FF6B6B', marginTop: 16, textAlign: 'center' }}>
-                            {error}
+            <ScrollView
+                ref={scrollViewRef}
+                onContentSizeChange={() => scrollViewRef.current.scrollToEnd({ animated: true })}
+                style={styles.chatArea}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 20 }}
+            >
+                {/* Web's Initial Welcome Prompt (Only if no messages) */}
+                {messages.length === 0 && (
+                    <View style={[styles.bubble, styles.aiBubble]}>
+                        <Text style={styles.aiText}>
+                            Hey! I'm {advisor.name}. I've got your records open. What's the latest update in your dating world?
                         </Text>
-                        <TouchableOpacity
-                            style={{ marginTop: 20, paddingHorizontal: 24, paddingVertical: 12, backgroundColor: Colors.primary, borderRadius: 12 }}
-                            onPress={() => navigation.goBack()}
-                        >
-                            <Text style={{ color: 'white', fontWeight: '700' }}>Go Back</Text>
-                        </TouchableOpacity>
                     </View>
-                ) : (
-                    <ScrollView
-                        ref={scrollViewRef}
-                        contentContainerStyle={styles.messagesContainer}
-                        onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        {messages.length === 0 ? (
-                            <View style={styles.emptyContainer}>
-                                <Text style={styles.emptyText}>Start a conversation with {name}</Text>
-                            </View>
-                        ) : (
-                            messages.map((msg, index) => (
-                                <View
-                                    key={msg.id || index}
-                                    style={[
-                                        styles.messageBubble,
-                                        msg.role === 'user' ? styles.userBubble : styles.advisorBubble
-                                    ]}
-                                >
-                                    <Text style={[
-                                        styles.messageText,
-                                        msg.role === 'user' ? { color: 'white' } : { color: '#121E39' }
-                                    ]}>
-                                        {msg.content}
-                                    </Text>
-                                    <Text style={[
-                                        styles.messageTime,
-                                        msg.role === 'user' ? { color: 'rgba(255,255,255,0.7)' } : { color: '#ADAFBB' }
-                                    ]}>
-                                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                    </Text>
-                                </View>
-                            ))
-                        )}
-                    </ScrollView>
                 )}
 
-                {/* Input Bar */}
-                <View style={[styles.inputContainer, { paddingBottom: Math.max(insets.bottom, 15) }]}>
-                    <TouchableOpacity style={styles.micBtn}>
-                        <Ionicons name="mic-outline" size={24} color="#121E39" />
-                    </TouchableOpacity>
-                    <View style={styles.textInputWrapper}>
+                {messages.map((m, i) => (
+                    <View key={i} style={[styles.bubble, m.role === 'user' ? styles.userBubble : styles.aiBubble]}>
+                        <Text style={[styles.msgText, m.role === 'user' ? styles.userText : styles.aiText]}>{m.content}</Text>
+                    </View>
+                ))}
+                {isTyping && (
+                    <View style={styles.thinking}>
+                        <Ionicons name="time-outline" size={12} color="#9CA3AF" />
+                        <Text style={styles.thinkingText}>{advisor.name} is thinking...</Text>
+                    </View>
+                )}
+            </ScrollView>
+
+            {/* Voice Call Modal Integration */}
+            <VoiceCallModal
+                visible={showCallModal}
+                onClose={() => setShowCallModal(false)}
+                advisor={advisor}
+                userId={userId}
+                onRequireTopUp={() => {
+                    setShowCallModal(false);
+                    setShowTopUpModal(true);
+                }}
+            />
+
+            <TopUpModal
+                visible={showTopUpModal}
+                onClose={() => setShowTopUpModal(false)}
+                onTopUp={() => navigation.navigate('CreditTopup')}
+                onStartCall={() => setShowCallModal(true)}
+                minutesBalance={usage?.voice_minutes_left || 0}
+            />
+
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
+                <View style={styles.footer}>
+                    <View style={styles.inputContainer}>
                         <TextInput
                             style={styles.input}
-                            placeholder="Type your message..."
-                            value={message}
-                            onChangeText={setMessage}
+                            placeholder={`Consult with ${advisor.name}...`}
+                            value={input}
+                            onChangeText={setInput}
                             multiline
-                            maxHeight={100}
+                            placeholderTextColor="#9CA3AF"
                         />
-                        <TouchableOpacity style={styles.sendBtn} onPress={handleSend}>
-                            <Ionicons name="send-outline" size={20} color={Colors.primary} />
+                        <TouchableOpacity
+                            style={[styles.sendBtn, !input.trim() && { opacity: 0.5 }]}
+                            onPress={handleSendMessage}
+                            disabled={!input.trim() || isTyping}
+                        >
+                            {isTyping ? <ActivityIndicator color="#FFF" size="small" /> : <Ionicons name="send" size={20} color="#FFF" />}
                         </TouchableOpacity>
                     </View>
+                    <Text style={styles.usageInfo}>{(usage?.messages_left || 0).toFixed(0)} MESSAGES REMAINING</Text>
                 </View>
-
-                <VoiceCallModal
-                    visible={showVoiceModal}
-                    onClose={() => setShowVoiceModal(false)}
-                    advisor={{ name, specialty: route.params?.specialty, image_url, id: advisorId }}
-                    userId={currentUser?.id}
-                />
             </KeyboardAvoidingView>
-        </ScreenWrapper>
+        </View>
     );
 };
 
+// Styles (Website Aesthetics)
 const styles = StyleSheet.create({
-    chatHeader: {
+    container: { flex: 1, backgroundColor: Colors.background },
+    headerSafeArea: { backgroundColor: Colors.secondary },
+    center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 15,
-        backgroundColor: '#1A1A1A',
-        borderBottomWidth: 0,
+        paddingBottom: 20,
+        backgroundColor: Colors.secondary,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30
     },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    backButton: {
-        marginRight: 15,
-        padding: 5,
-    },
-    headerAvatarContainer: {
-        position: 'relative',
-        marginRight: 12,
-    },
-    headerAvatar: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        backgroundColor: '#333',
-    },
-    onlineStatus: {
-        position: 'absolute',
-        bottom: -2,
-        right: -2,
-        width: 12,
-        height: 12,
-        borderRadius: 6,
-        backgroundColor: '#4CAF50',
-        borderWidth: 2,
-        borderColor: '#1A1A1A',
-    },
-    headerName: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#FFF',
-        marginBottom: 2,
-    },
-    specialtyContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-    },
-    headerTitle: {
-        fontSize: 10,
-        fontWeight: '900',
-        color: 'rgba(255,255,255,0.7)', // Increased visibility
-        textTransform: 'uppercase',
-        letterSpacing: 1,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 15,
-    },
-    actionBtn: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255,255,255,0.05)',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 0,
-        borderColor: 'transparent',
-    },
-    messagesContainer: {
-        padding: 20,
-        paddingBottom: 40,
-    },
-    messageBubble: {
-        borderRadius: 20,
-        padding: 15,
-        maxWidth: '85%',
-        marginBottom: 15,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.05,
-        shadowRadius: 2,
-        elevation: 1,
-    },
-    userBubble: {
-        backgroundColor: Colors.primary,
-        alignSelf: 'flex-end',
-        borderTopRightRadius: 5,
-    },
-    advisorBubble: {
-        backgroundColor: Colors.white,
-        alignSelf: 'flex-start',
-        borderTopLeftRadius: 5,
-        borderWidth: 1,
-        borderColor: '#F0F0F0',
-    },
-    messageText: {
-        fontSize: 15,
-        lineHeight: 22,
-    },
-    messageTime: {
-        fontSize: 10,
-        marginTop: 5,
-        alignSelf: 'flex-end',
-    },
-    emptyContainer: {
-        alignItems: 'center',
-        marginTop: 50,
-        opacity: 0.5,
-    },
-    emptyText: {
-        fontSize: 14,
-        color: '#7C8BA0',
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 15,
-        backgroundColor: '#FFF',
-        borderTopWidth: 1.5,
-        borderTopColor: '#E8E6EA', // Visible border
-        paddingBottom: Platform.OS === 'ios' ? 30 : 15, // Safe area space
-    },
-    micBtn: {
-        marginRight: 10,
-    },
-    textInputWrapper: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#F7F7F7',
-        borderRadius: 25,
-        paddingHorizontal: 15,
-        height: 50,
-        borderWidth: 1,
-        borderColor: '#E8E6EA',
-    },
-    input: {
-        flex: 1,
-        fontSize: 15,
-        color: '#121E39',
-    },
-    sendBtn: {
-        marginLeft: 10,
-    },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 15 },
+    avatar: { width: 50, height: 50, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)' },
+    name: { color: Colors.white, fontSize: 18, fontWeight: '800' },
+    badge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
+    badgeText: { color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: '900', textTransform: 'uppercase', letterSpacing: 0.5 },
+    callCircle: { padding: 12, backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: 16 },
+    chatArea: { flex: 1, padding: 15 },
+    bubble: { maxWidth: '85%', padding: 18, borderRadius: 28, marginBottom: 15 },
+    userBubble: { alignSelf: 'flex-end', backgroundColor: Colors.secondary, borderBottomRightRadius: 4 },
+    aiBubble: { alignSelf: 'flex-start', backgroundColor: Colors.surface, borderBottomLeftRadius: 4, borderWidth: 1, borderColor: Colors.border },
+    msgText: { fontSize: 15, lineHeight: 22 },
+    userText: { color: Colors.white },
+    aiText: { color: Colors.text },
+    thinking: { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 15, marginBottom: 20 },
+    thinkingText: { fontSize: 12, color: Colors.textSecondary, fontStyle: 'italic' },
+    footer: { padding: 20, backgroundColor: Colors.surface, borderTopWidth: 1, borderTopColor: Colors.border },
+    inputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.inputBackground, borderRadius: 30, padding: 6, paddingLeft: 20 },
+    input: { flex: 1, paddingVertical: 10, fontSize: 15, maxHeight: 120, color: Colors.text },
+    sendBtn: { width: 44, height: 44, backgroundColor: Colors.primary, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+    usageInfo: { textAlign: 'center', fontSize: 10, color: Colors.textSecondary, marginTop: 12, fontWeight: '900', letterSpacing: 1, textTransform: 'uppercase' }
 });
-
 
 export default ChatDetailScreen;

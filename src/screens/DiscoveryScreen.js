@@ -108,8 +108,14 @@ const DiscoveryScreen = ({ navigation, route }) => {
                     body: JSON.stringify({ userId: session.user.id, answers: finalAnswers })
                 }).catch(e => console.log('Webhook call failed:', e));
 
-                // 3. Poll for analysis result
-                pollForAnalysis(session.user.id);
+                // 3. Mark as pending and navigate to Home where polling happens centrally
+                await AsyncStorage.setItem('discovery_pending', 'true');
+                await AsyncStorage.setItem('discovery_start_time', Date.now().toString());
+
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Main', params: { screen: 'Home' } }]
+                });
             } else {
                 console.log('No webhook URL configured');
                 navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
@@ -158,17 +164,12 @@ const DiscoveryScreen = ({ navigation, route }) => {
                                 { name: 'Main' },
                                 {
                                     name: 'ChatDetail',
-                                    params: {
-                                        name: advisor.name,
-                                        id: advisor.id,
-                                        image_url: advisor.image_url,
-                                        specialty: advisor.specialty,
-                                        initialContext: "I've just completed my profile discovery. I'm ready for your advice!"
-                                    }
+                                    params: { advisor }
                                 }
                             ]
                         });
                     } else {
+                        // If no specific advisor found, navigate to Main and let Home handle it.
                         navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
                     }
                 } else {
@@ -205,7 +206,7 @@ const DiscoveryScreen = ({ navigation, route }) => {
                         onPress={() => currentStep > 1 ? animateNext(() => setCurrentStep(currentStep - 1)) : navigation.goBack()}
                         style={styles.backButton}
                     >
-                        <Ionicons name="chevron-back" size={24} color="#12172D" />
+                        <Ionicons name="chevron-back" size={24} color={Colors.secondary} />
                     </TouchableOpacity>
                     <View style={styles.progressBarContainer}>
                         <View style={[styles.progressBar, { width: `${totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0}%` }]} />
@@ -253,7 +254,7 @@ const DiscoveryScreen = ({ navigation, route }) => {
                                             onPress={() => handleOptionSelect(option)}
                                         >
                                             <Text style={styles.optionText}>{option}</Text>
-                                            <Ionicons name="chevron-forward" size={18} color="#E94057" />
+                                            <Ionicons name="arrow-forward" size={20} color={Colors.primary} />
                                         </TouchableOpacity>
                                     ));
                                 } catch (e) {
@@ -268,7 +269,7 @@ const DiscoveryScreen = ({ navigation, route }) => {
                 {isSubmitting && (
                     <View style={styles.submittingOverlay}>
                         <LinearGradient
-                            colors={['#E94057', '#F27121']}
+                            colors={['#0F172A', '#1E293B']}
                             style={StyleSheet.absoluteFill}
                         />
                         <View style={styles.overlayContent}>
@@ -286,7 +287,7 @@ const DiscoveryScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: Colors.background,
     },
     loadingContainer: {
         flex: 1,
@@ -298,29 +299,34 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingTop: Platform.OS === 'android' ? 40 : 20,
+        paddingBottom: 15,
     },
     backButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#E8E6EA',
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: Colors.white,
         justifyContent: 'center',
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
     },
     progressBarContainer: {
         flex: 1,
-        height: 6,
-        backgroundColor: '#F3F3F3',
-        borderRadius: 3,
+        height: 8,
+        backgroundColor: Colors.border,
+        borderRadius: 4,
         marginHorizontal: 15,
         overflow: 'hidden',
     },
     progressBar: {
         height: '100%',
-        backgroundColor: '#E94057',
-        borderRadius: 3,
+        backgroundColor: Colors.primary,
+        borderRadius: 4,
     },
     scrollContent: {
         flexGrow: 1,
@@ -328,47 +334,48 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 25,
-        paddingTop: 30,
+        paddingTop: 40,
         paddingBottom: 40,
     },
     stepIndicator: {
         fontSize: 12,
         fontWeight: '900',
-        color: '#E94057',
+        color: Colors.primary,
         textTransform: 'uppercase',
-        marginBottom: 8,
-        letterSpacing: 1,
+        marginBottom: 10,
+        letterSpacing: 1.5,
     },
     questionText: {
-        fontSize: 28,
-        fontWeight: '800',
-        color: '#12172D',
-        marginBottom: 30,
-        lineHeight: 36,
+        fontSize: 32,
+        fontWeight: '900',
+        color: Colors.secondary,
+        marginBottom: 35,
+        lineHeight: 40,
+        fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     },
     optionsContainer: {
-        gap: 10,
+        gap: 12,
     },
     optionButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#fff',
-        paddingVertical: 18,
-        paddingHorizontal: 22,
-        borderRadius: 18,
-        borderWidth: 2,
-        borderColor: '#F3F3F3',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
+        backgroundColor: Colors.white,
+        paddingVertical: 20,
+        paddingHorizontal: 25,
+        borderRadius: 22,
+        borderWidth: 1.5,
+        borderColor: Colors.border,
+        shadowColor: Colors.secondary,
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.05,
-        shadowRadius: 10,
-        elevation: 2,
+        shadowRadius: 15,
+        elevation: 3,
     },
     optionText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: '#12172D',
+        fontSize: 17,
+        fontWeight: '800',
+        color: Colors.secondary,
         flex: 1,
         marginRight: 10,
     },
@@ -384,16 +391,17 @@ const styles = StyleSheet.create({
     },
     submittingText: {
         color: 'white',
-        marginTop: 20,
-        fontSize: 22,
-        fontWeight: '800',
+        marginTop: 25,
+        fontSize: 24,
+        fontWeight: '900',
         textAlign: 'center',
+        fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     },
     submittingSubtext: {
-        color: 'rgba(255,255,255,0.8)',
-        marginTop: 10,
-        fontSize: 15,
-        fontWeight: '500',
+        color: 'rgba(255,255,255,0.7)',
+        marginTop: 12,
+        fontSize: 16,
+        fontWeight: '600',
         textAlign: 'center',
     },
 });

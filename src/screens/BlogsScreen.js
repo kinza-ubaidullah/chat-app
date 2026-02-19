@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import Header from '../components/Header';
 import { supabase } from '../lib/supabase';
+import { fetchBlogs } from '../lib/dataService';
 
 const { width } = Dimensions.get('window');
 
@@ -19,14 +20,8 @@ const BlogsScreen = ({ navigation }) => {
     const fetchPosts = async () => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
-                .from('blogs')
-                .select('id, slug, title, excerpt, image_url, published_at, author')
-                .eq('is_published', true)
-                .order('published_at', { ascending: false });
-
-            if (error) console.error('Error fetching blogs:', error);
-            else setPosts(data || []);
+            const data = await fetchBlogs();
+            setPosts(data);
         } catch (error) {
             console.error('Error fetching blogs:', error);
         } finally {

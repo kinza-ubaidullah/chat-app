@@ -37,15 +37,15 @@ const WelcomeScreen = ({ navigation }) => {
                     </View>
                 </View>
 
-                <Text style={styles.title}>Datingadvice</Text>
+                <Text style={styles.title}>Dating Advice</Text>
 
                 <View style={styles.subtitleContainer}>
-                    <Ionicons name="sparkles-outline" size={16} color={Colors.primary} />
-                    <Text style={styles.subtitle}>AI-Powered Dating Advice</Text>
+                    <Ionicons name="sparkles" size={16} color={Colors.primary} />
+                    <Text style={styles.subtitle}>AI-Powered Guidance</Text>
                 </View>
 
                 <Text style={styles.description}>
-                    Your personal guide to meaningful connections and lasting love
+                    Your personal guide to meaningful connections and lasting love. Expert advisors in your pocket.
                 </Text>
 
                 <View style={styles.buttonContainer}>
@@ -54,7 +54,7 @@ const WelcomeScreen = ({ navigation }) => {
                         onPress={() => navigation.navigate('SignUp')}
                         activeOpacity={0.8}
                     >
-                        <Text style={styles.primaryButtonText}>Get Started</Text>
+                        <Text style={styles.primaryButtonText}>Create Account</Text>
                     </TouchableOpacity>
 
                     <TouchableOpacity
@@ -68,8 +68,12 @@ const WelcomeScreen = ({ navigation }) => {
 
                 <View style={styles.footer}>
                     <Text style={styles.footerText}>By continuing you agree to our </Text>
-                    <TouchableOpacity>
-                        <Text style={styles.footerLink}>Terms of Service</Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Legal', { type: 'terms' })}>
+                        <Text style={styles.footerLink}>Terms</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.footerText}> and </Text>
+                    <TouchableOpacity onPress={() => navigation.navigate('Legal', { type: 'privacy' })}>
+                        <Text style={styles.footerLink}>Privacy</Text>
                     </TouchableOpacity>
                 </View>
             </Animated.View>

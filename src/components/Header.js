@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Platform } from 'react-native';
 import { Colors } from '../theme/colors';
 import { Ionicons } from '@expo/vector-icons';
+import LogoutModal from './LogoutModal';
 
 const Header = ({ showLogout = true, onLogout }) => {
+    const [logoutModalVisible, setLogoutModalVisible] = useState(false);
+
     return (
         <View style={styles.header}>
             <View style={styles.leftContainer}>
@@ -15,14 +18,26 @@ const Header = ({ showLogout = true, onLogout }) => {
                     <Text style={styles.welcomeText}>Welcome back!</Text>
                 </View>
             </View>
+
             {showLogout && (
-                <TouchableOpacity
-                    style={styles.logoutButton}
-                    onPress={onLogout}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons name="log-out-outline" size={24} color={Colors.text} />
-                </TouchableOpacity>
+                <>
+                    <TouchableOpacity
+                        style={styles.logoutButton}
+                        onPress={() => setLogoutModalVisible(true)}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="log-out-outline" size={24} color={Colors.text} />
+                    </TouchableOpacity>
+
+                    <LogoutModal
+                        visible={logoutModalVisible}
+                        onClose={() => setLogoutModalVisible(false)}
+                        onConfirm={() => {
+                            setLogoutModalVisible(false);
+                            if (onLogout) onLogout();
+                        }}
+                    />
+                </>
             )}
         </View>
     );
@@ -34,15 +49,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 18,
-        borderBottomWidth: 1,
-        borderBottomColor: Colors.border,
-        backgroundColor: Colors.white,
+        paddingTop: Platform.OS === 'android' ? 40 : 20,
+        paddingBottom: 15,
+        backgroundColor: 'transparent',
         ...Platform.select({
             web: {
                 position: 'sticky',
                 top: 0,
                 zIndex: 100,
+                backgroundColor: 'rgba(248, 250, 252, 0.8)',
             }
         })
     },
@@ -51,40 +66,49 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     logoSquare: {
-        width: 46,
-        height: 46,
+        width: 48,
+        height: 48,
         backgroundColor: Colors.primary,
-        borderRadius: 14,
+        borderRadius: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 14,
+        marginRight: 16,
         shadowColor: Colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.3,
+        shadowRadius: 10,
+        elevation: 8,
     },
     titleContainer: {
         justifyContent: 'center',
     },
     logoText: {
-        fontSize: 22,
-        fontWeight: '800',
-        color: Colors.text,
+        fontSize: 24,
+        fontWeight: '900',
+        color: Colors.secondary,
+        letterSpacing: -0.5,
         fontFamily: Platform.OS === 'ios' ? 'Georgia' : 'serif',
     },
     welcomeText: {
-        fontSize: 14,
+        fontSize: 12,
         color: Colors.textSecondary,
-        fontWeight: '500',
-        marginTop: -1,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginTop: 2,
     },
     logoutButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: Colors.inputBackground,
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        backgroundColor: Colors.white,
         alignItems: 'center',
         justifyContent: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+        elevation: 2,
     },
 });
 

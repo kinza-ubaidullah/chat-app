@@ -21,11 +21,13 @@ const SignUpScreen = ({ navigation }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [agreed, setAgreed] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [errorMessage, setErrorMessage] = useState('');
-    const [termsUrl, setTermsUrl] = useState('https://lovewise.io/terms'); // Default fallback
+    const [termsUrl, setTermsUrl] = useState('https://datingadvice.io/terms'); // Default fallback
 
     useEffect(() => {
         const fetchSettings = async () => {
@@ -41,8 +43,13 @@ const SignUpScreen = ({ navigation }) => {
 
     const handleSignUp = async () => {
         setErrorMessage('');
-        if (!email || !password || !name) {
+        if (!email || !password || !confirmPassword || !name) {
             setErrorMessage('Please fill in all fields to create your account.');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            setErrorMessage('Passwords do not match.');
             return;
         }
 
@@ -99,7 +106,8 @@ const SignUpScreen = ({ navigation }) => {
         <ScreenWrapper style={{ paddingTop: 0 }}>
             <KeyboardAvoidingView
                 style={{ flex: 1 }}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <LinearGradient
                     colors={['#FF9A9E', '#FAD0C4', '#F7F3EE']}
@@ -195,23 +203,61 @@ const SignUpScreen = ({ navigation }) => {
                                 </View>
                             </View>
 
-                            {/* Terms Checkbox */}
-                            <TouchableOpacity
-                                style={styles.checkboxContainer}
-                                onPress={() => {
-                                    setAgreed(!agreed);
-                                    if (errorMessage) setErrorMessage('');
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <View style={[styles.checkbox, agreed && styles.checkboxChecked, errorMessage && !agreed && styles.checkboxError]}>
-                                    {agreed && <Ionicons name="checkmark" size={16} color="#fff" />}
+                            {/* Confirm Password Input */}
+                            <View style={styles.inputContainer}>
+                                <View style={[styles.passwordContainer, errorMessage && !confirmPassword && styles.inputError]}>
+                                    <TextInput
+                                        style={styles.passwordInput}
+                                        placeholder="Confirm Password"
+                                        placeholderTextColor="#999"
+                                        value={confirmPassword}
+                                        onChangeText={(text) => {
+                                            setConfirmPassword(text);
+                                            if (errorMessage) setErrorMessage('');
+                                        }}
+                                        secureTextEntry={!showConfirmPassword}
+                                        autoCapitalize="none"
+                                    />
+                                    <TouchableOpacity
+                                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        style={styles.eyeIcon}
+                                    >
+                                        <Ionicons
+                                            name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
+                                            size={22}
+                                            color="#999"
+                                        />
+                                    </TouchableOpacity>
                                 </View>
+                            </View>
+
+                            {/* Terms Checkbox */}
+                            <View style={styles.checkboxContainer}>
+                                <TouchableOpacity
+                                    onPress={() => {
+                                        setAgreed(!agreed);
+                                        if (errorMessage) setErrorMessage('');
+                                    }}
+                                    activeOpacity={0.7}
+                                    style={styles.checkboxRow}
+                                >
+                                    <View style={[styles.checkbox, agreed && styles.checkboxChecked, errorMessage && !agreed && styles.checkboxError]}>
+                                        {agreed && <Ionicons name="checkmark" size={16} color="#fff" />}
+                                    </View>
+                                </TouchableOpacity>
                                 <Text style={styles.checkboxText}>
                                     I agree to the{' '}
-                                    <Text style={styles.linkText}>Terms & Conditions</Text>
+                                    <Text
+                                        style={styles.linkText}
+                                        onPress={() => navigation.navigate('Legal', { type: 'terms' })}
+                                    >Terms</Text>
+                                    {' '}and{' '}
+                                    <Text
+                                        style={styles.linkText}
+                                        onPress={() => navigation.navigate('Legal', { type: 'privacy' })}
+                                    >Privacy Policy</Text>
                                 </Text>
-                            </TouchableOpacity>
+                            </View>
 
                             {/* Sign Up Button */}
                             <TouchableOpacity
@@ -358,6 +404,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginVertical: 20,
+    },
+    checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     checkbox: {
         width: 24,

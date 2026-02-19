@@ -1,10 +1,10 @@
 export const aboutData = {
-    title: "About LoveWise",
+    title: "About Dating Advice",
     subtitle: "Empowering Modern Relationships Through AI-Powered Guidance",
 
     mission: {
         heading: "Our Mission",
-        content: "LoveWise was founded to bridge the gap between technology and the heart. We believe everyone deserves expert guidance in their journey to find lasting love. Our AI-powered relationship advisors combine cutting-edge technology with proven relationship psychology to provide personalized, actionable advice that transforms how people approach dating and relationships."
+        content: "Dating Advice was founded to bridge the gap between technology and the heart. We believe everyone deserves expert guidance in their journey to find lasting love. Our AI-powered relationship advisors combine cutting-edge technology with proven relationship psychology to provide personalized, actionable advice that transforms how people approach dating and relationships."
     },
 
     vision: {
@@ -40,7 +40,7 @@ export const aboutData = {
 
     cta: {
         heading: "Ready to Transform Your Dating Life?",
-        description: "Join thousands who've found clarity, confidence, and connection with LoveWise.",
+        description: "Join thousands who've found clarity, confidence, and connection with Dating Advice.",
         buttonText: "Start Your Journey"
     }
 };

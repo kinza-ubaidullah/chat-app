@@ -6,6 +6,7 @@ import ScreenWrapper from '../components/ScreenWrapper';
 import Header from '../components/Header';
 import { supabase } from '../lib/supabase';
 import { LinearGradient } from 'expo-linear-gradient';
+import Markdown from 'react-native-markdown-display';
 
 const { width } = Dimensions.get('window');
 
@@ -101,7 +102,9 @@ const BlogPostScreen = ({ route, navigation }) => {
 
                     <View style={styles.divider} />
 
-                    <Text style={styles.content}>{post.content}</Text>
+                    <Markdown style={markdownStyles}>
+                        {post.content}
+                    </Markdown>
 
                     {/* Placeholder for more content if needed */}
                     <View style={styles.footer}>
@@ -237,5 +240,50 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
 });
+
+const markdownStyles = {
+    body: {
+        fontSize: 16,
+        lineHeight: 28,
+        color: Colors.text,
+    },
+    heading1: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: Colors.text,
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    heading2: {
+        fontSize: 20,
+        fontWeight: '800',
+        color: Colors.text,
+        marginTop: 15,
+        marginBottom: 10,
+    },
+    strong: {
+        fontWeight: '900',
+        color: '#12172D',
+    },
+    bullet_list: {
+        marginTop: 10,
+        marginBottom: 10,
+    },
+    list_item: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    bullet_list_icon: {
+        color: Colors.primary,
+        fontSize: 20,
+        marginRight: 10,
+        lineHeight: 28,
+    },
+    paragraph: {
+        marginBottom: 15,
+        textAlign: 'justify',
+    },
+};
 
 export default BlogPostScreen;

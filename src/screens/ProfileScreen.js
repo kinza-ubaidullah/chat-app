@@ -5,10 +5,11 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenWrapper from '../components/ScreenWrapper';
 import Header from '../components/Header';
 import { supabase } from '../lib/supabase';
-import * as ImagePicker from 'expo-image-picker';
 
 const ProfileScreen = ({ navigation }) => {
     const [user, setUser] = useState(null);
+    const [stats, setStats] = useState({ matches: 0, advisors: 0, rating: 4.8 });
+    const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
@@ -27,9 +28,33 @@ const ProfileScreen = ({ navigation }) => {
                 } else {
                     setUser(authUser);
                 }
+
+                // Fetch dynamic stats
+                try {
+                    // 1. Matches: Unique advisors the user has chatted with
+                    const { data: historyData } = await supabase
+                        .from('chat_history')
+                        .select('advisor_id')
+                        .eq('user_id', authUser.id);
+
+                    const uniqueAdvisors = new Set((historyData || []).map(item => item.advisor_id));
+
+                    // 2. Advisors: Total advisors available
+                    const { count: advisorCount } = await supabase
+                        .from('advisors')
+                        .select('*', { count: 'exact', head: true });
+
+                    setStats({
+                        matches: uniqueAdvisors.size,
+                        advisors: advisorCount || 0,
+                        rating: 4.8 // Keep as constant profile strength rating
+                    });
+                } catch (statError) {
+                    console.error('Error fetching profile stats:', statError);
+                }
             }
         };
-        fetchUserData();
+        fetchUserData().finally(() => setLoading(false));
     }, []);
 
     const handleLogout = async () => {
@@ -40,100 +65,6 @@ const ProfileScreen = ({ navigation }) => {
         // App.js will automatically handle navigation thanks to onAuthStateChange
     };
 
-    const handleImagePick = async () => {
-        try {
-            // Request permissions
-            const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-            if (permissionResult.granted === false) {
-                Alert.alert('Permission Required', 'Please allow access to your photo library to upload a profile picture.');
-                return;
-            }
-
-            // Launch image picker
-            const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
-                allowsEditing: true,
-                aspect: [1, 1],
-                quality: 0.7,
-            });
-
-            if (!result.canceled && result.assets && result.assets[0]) {
-                await uploadImage(result.assets[0].uri);
-            }
-        } catch (error) {
-            console.error('Error picking image:', error);
-            Alert.alert('Error', 'Failed to pick image. Please try again.');
-        }
-    };
-
-    const uploadImage = async (uri) => {
-        setUploading(true);
-        try {
-            const { data: { user: authUser } } = await supabase.auth.getUser();
-            if (!authUser) {
-                Alert.alert('Error', 'Please log in to upload a profile picture.');
-                return;
-            }
-
-            // Create a unique file name
-            const fileExt = uri.split('.').pop();
-            const fileName = `${authUser.id}-${Date.now()}.${fileExt}`;
-            const filePath = `avatars/${fileName}`;
-
-            // Convert URI to blob for upload
-            const response = await fetch(uri);
-            const blob = await response.blob();
-
-            // Upload to Supabase Storage
-            const { error: uploadError } = await supabase.storage
-                .from('avatars')
-                .upload(filePath, blob, {
-                    contentType: `image/${fileExt}`,
-                    upsert: true
-                });
-
-            if (uploadError) {
-                throw uploadError;
-            }
-
-            // Get public URL
-            const { data: urlData } = supabase.storage
-                .from('avatars')
-                .getPublicUrl(filePath);
-
-            if (!urlData?.publicUrl) {
-                throw new Error('Failed to get public URL');
-            }
-
-            // Update profile with new avatar URL
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({ avatar_url: urlData.publicUrl })
-                .eq('id', authUser.id);
-
-            if (updateError) {
-                throw updateError;
-            }
-
-            // Update local state
-            setUser(prev => ({
-                ...prev,
-                profile: {
-                    ...prev.profile,
-                    avatar_url: urlData.publicUrl
-                }
-            }));
-
-            Alert.alert('Success', 'Profile picture updated successfully!');
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            Alert.alert('Upload Failed', error.message || 'Failed to upload profile picture. Please try again.');
-        } finally {
-            setUploading(false);
-        }
-    };
-
     return (
         <ScreenWrapper>
             <Header onLogout={handleLogout} />
@@ -141,7 +72,9 @@ const ProfileScreen = ({ navigation }) => {
                 <View style={styles.profileHeader}>
                     <View style={styles.avatarMain}>
                         <View style={styles.avatarCircle}>
-                            {user?.profile?.avatar_url ? (
+                            {uploading ? (
+                                <ActivityIndicator size="large" color={Colors.primary} />
+                            ) : user?.profile?.avatar_url ? (
                                 <Image
                                     source={{ uri: user.profile.avatar_url }}
                                     style={styles.avatarImage}
@@ -150,17 +83,6 @@ const ProfileScreen = ({ navigation }) => {
                                 <Ionicons name="person" size={70} color={Colors.primary} />
                             )}
                         </View>
-                        <TouchableOpacity
-                            style={styles.editBadge}
-                            onPress={handleImagePick}
-                            disabled={uploading}
-                        >
-                            {uploading ? (
-                                <ActivityIndicator size="small" color="white" />
-                            ) : (
-                                <Ionicons name="camera" size={20} color="white" />
-                            )}
-                        </TouchableOpacity>
                     </View>
                     <Text style={styles.userName}>
                         {user?.profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}
@@ -170,18 +92,18 @@ const ProfileScreen = ({ navigation }) => {
 
                 <View style={styles.statsRow}>
                     <View style={styles.statItem}>
-                        <Text style={styles.statVal}>8</Text>
+                        <Text style={styles.statVal}>{stats.matches}</Text>
                         <Text style={styles.statLab}>Matches</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.statItem}>
-                        <Text style={styles.statVal}>12</Text>
+                        <Text style={styles.statVal}>{stats.advisors}</Text>
                         <Text style={styles.statLab}>Advisors</Text>
                     </View>
                     <View style={styles.divider} />
                     <View style={styles.statItem}>
-                        <Text style={styles.statVal}>4.8</Text>
-                        <Text style={styles.statLab}>Rating</Text>
+                        <Text style={[styles.statVal, { color: Colors.accent }]}>{stats.rating}</Text>
+                        <Text style={styles.statLab}>Strength</Text>
                     </View>
                 </View>
 
@@ -253,37 +175,25 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     avatarCircle: {
-        width: 130,
-        height: 130,
-        borderRadius: 45,
-        backgroundColor: Colors.primaryLight,
+        width: 140,
+        height: 140,
+        borderRadius: 50,
+        backgroundColor: Colors.white,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 4,
-        borderColor: Colors.white,
-        shadowColor: Colors.primary,
-        shadowOffset: { width: 0, height: 10 },
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
+        borderWidth: 2,
+        borderColor: Colors.border,
+        shadowColor: Colors.secondary,
+        shadowOffset: { width: 0, height: 15 },
+        shadowOpacity: 0.15,
+        shadowRadius: 25,
+        elevation: 10,
         overflow: 'hidden',
     },
     avatarImage: {
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
-    },
-    editBadge: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        backgroundColor: Colors.primary,
-        width: 40,
-        height: 40,
-        borderRadius: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: Colors.white,
     },
     userName: {
         fontSize: 26,
@@ -339,13 +249,13 @@ const styles = StyleSheet.create({
         borderColor: Colors.border,
     },
     infoIconBg: {
-        width: 46,
-        height: 46,
-        borderRadius: 14,
-        backgroundColor: Colors.primaryLight,
+        width: 48,
+        height: 48,
+        borderRadius: 16,
+        backgroundColor: Colors.background,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
+        marginRight: 20,
     },
     infoText: {
         flex: 1,
