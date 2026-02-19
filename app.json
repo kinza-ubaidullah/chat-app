@@ -41,7 +41,11 @@
       "expo-secure-store"
     ],
     "updates": {
-      "enabled": false
+      "enabled": false,
+      "url": "https://u.expo.dev/511afef4-677c-4200-b41c-225177b50abb"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
