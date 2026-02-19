@@ -1,7 +1,13 @@
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { supabase } from './supabase';
+let GoogleSignin;
+try {
+    const GoogleAuthModule = require('@react-native-google-signin/google-signin');
+    GoogleSignin = GoogleAuthModule.GoogleSignin;
+} catch (e) {
+    console.log('Google Sign-In module not found, skipping configuration.');
+}
 
 export const configureGoogleSignIn = () => {
+    if (!GoogleSignin) return;
     try {
         GoogleSignin.configure({
             webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || 'YOUR_WEB_CLIENT_ID',
@@ -13,6 +19,10 @@ export const configureGoogleSignIn = () => {
 };
 
 export const signInWithGoogle = async () => {
+    if (!GoogleSignin) {
+        Alert.alert("Feature unavailable", "Google Sign-In is not available in this version.");
+        return null;
+    }
     try {
         await GoogleSignin.hasPlayServices();
         const userInfo = await GoogleSignin.signIn();
@@ -29,16 +39,7 @@ export const signInWithGoogle = async () => {
             throw new Error('No ID token present!');
         }
     } catch (error) {
-        if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-            console.log('User cancelled Google Sign-in');
-            return null;
-        } else if (error.code === statusCodes.IN_PROGRESS) {
-            throw new Error('Sign-in is already in progress.');
-        } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-            throw new Error('Google Play Services are not available or outdated.');
-        } else {
-            console.error('Google Sign-in detail:', error);
-            throw new Error(error.message || 'An unknown error occurred during Google Sign-in.');
-        }
+        console.error('Google Sign-in detail:', error);
+        throw new Error(error.message || 'An unknown error occurred during Google Sign-in.');
     }
 };

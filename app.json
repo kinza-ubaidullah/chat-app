@@ -38,8 +38,7 @@
       }
     },
     "plugins": [
-      "expo-secure-store",
-      "@react-native-google-signin/google-signin"
+      "expo-secure-store"
     ],
     "updates": {
       "enabled": false
