@@ -1,7 +1,5 @@
-import { Platform, View, Text, StatusBar } from 'react-native';
-if (Platform.OS !== 'web') {
-  require('react-native-url-polyfill/auto');
-}
+import { Platform, View, Text } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -112,17 +110,16 @@ export default function App() {
     }
 
     const loadApp = async () => {
-      const minLoadTime = new Promise(resolve => setTimeout(resolve, 2000));
-      const sessionCheck = supabase.auth.getSession().catch(err => {
-        console.error('Session error:', err);
-        return { data: { session: null } };
-      });
-
-      const [_, { data: { session } }] = await Promise.all([minLoadTime, sessionCheck]);
-
-      console.log('Initial session check:', session ? 'User logged in' : 'No session');
-      setSession(session);
-      setLoading(false);
+      try {
+        console.log('App starting initialization...');
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Session check complete:', session ? 'User logged in' : 'No session');
+        setSession(session);
+      } catch (err) {
+        console.error('Initial loadApp error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     loadApp();
@@ -139,8 +136,9 @@ export default function App() {
   if (loading) {
     return (
       <SafeAreaProvider style={{ flex: 1, backgroundColor: Colors.background }}>
-        <View style={{ flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center', minHeight: Platform.OS === 'web' ? '100vh' : '100%' }}>
+        <View style={{ flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }}>
           <LoadingScreen message="Initializing session..." />
+          <Text style={{ position: 'absolute', bottom: 50, color: '#CCC', fontSize: 10 }}>v1.0.3 Debug</Text>
         </View>
       </SafeAreaProvider>
     );
@@ -148,7 +146,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider style={{ flex: 1, backgroundColor: Colors.background }}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      <StatusBar style="dark" translucent />
       <View style={{ flex: 1, backgroundColor: Colors.background, minHeight: Platform.OS === 'web' ? '100vh' : '100%' }}>
         <NavigationContainer>
           <Stack.Navigator

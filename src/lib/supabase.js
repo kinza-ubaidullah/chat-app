@@ -10,11 +10,11 @@ import Constants from 'expo-constants';
 // Precedence: 
 // 1. process.env (EXPO_PUBLIC_)
 // 2. Constants.expoConfig.extra (app.json)
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || (Constants?.expoConfig?.extra?.supabaseUrl);
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || (Constants?.expoConfig?.extra?.supabaseAnonKey);
+const supabaseUrl = Constants?.expoConfig?.extra?.supabaseUrl || '';
+const supabaseAnonKey = Constants?.expoConfig?.extra?.supabaseAnonKey || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('CRITICAL: Supabase credentials missing. Check .env and app.json');
+    console.warn('Supabase credentials missing! App may not function correctly.');
 }
 
 // Create the client

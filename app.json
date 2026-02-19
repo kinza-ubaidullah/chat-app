@@ -18,12 +18,11 @@
     },
     "android": {
       "package": "com.datingadvice.app",
-      "versionCode": 3,
+      "versionCode": 4,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FF4D67"
       },
-      "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "adjustResize"
     },
     "web": {
