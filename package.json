@@ -11,7 +11,6 @@
   "dependencies": {
     "@daily-co/react-native-daily-js": "^0.78.0",
     "@daily-co/react-native-webrtc": "^124.0.6-daily.1",
-    "@expo/metro-runtime": "^6.1.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/netinfo": "^11.4.1",
     "@react-native-google-signin/google-signin": "^16.1.1",
@@ -35,7 +34,6 @@
     "expo-secure-store": "~15.0.8",
     "expo-sharing": "~14.0.8",
     "expo-status-bar": "~3.0.9",
-    "expo-updates": "~29.0.16",
     "expo-web-browser": "^15.0.10",
     "lucide-react-native": "^0.574.0",
     "react": "19.1.0",
