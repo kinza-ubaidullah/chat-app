@@ -114,14 +114,15 @@ export default function App() {
 
     const loadApp = async () => {
       try {
-        console.log('App starting initialization...');
+        console.log('[DEBUG] App: Starting initialization...');
         const { data: { session } } = await supabase.auth.getSession();
-        console.log('Session check complete:', session ? 'User logged in' : 'No session');
+        console.log('[DEBUG] App: Session check complete:', session ? 'Logged in' : 'No session');
         setSession(session);
       } catch (err) {
-        console.error('Initial loadApp error:', err);
+        console.error('[CRITICAL] App: Initialization failed:', err);
       } finally {
         setLoading(false);
+        console.log('[DEBUG] App: Loading set to false');
       }
     };
 
@@ -138,12 +139,10 @@ export default function App() {
 
   if (loading) {
     return (
-      <SafeAreaProvider style={{ flex: 1, backgroundColor: Colors.background }}>
-        <View style={{ flex: 1, backgroundColor: Colors.background, justifyContent: 'center', alignItems: 'center' }}>
-          <LoadingScreen message="Initializing session..." />
-          <Text style={{ position: 'absolute', bottom: 50, color: '#CCC', fontSize: 10 }}>v1.0.3 Debug</Text>
-        </View>
-      </SafeAreaProvider>
+      <View style={{ flex: 1, backgroundColor: Colors.background || '#FFF', justifyContent: 'center', alignItems: 'center' }}>
+        <LoadingScreen message="Initializing session..." />
+        <Text style={{ position: 'absolute', bottom: 50, color: '#CCC', fontSize: 10 }}>v1.0.4 Debug</Text>
+      </View>
     );
   }
 

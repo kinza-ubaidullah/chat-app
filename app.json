@@ -38,7 +38,22 @@
       }
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-updates",
+      "@react-native-google-signin/google-signin",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Dating Advice to access your camera to take photos for your profile and video calls.",
+          "microphonePermission": "Allow Dating Advice to access your microphone for video calls."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Dating Advice to access your photos to select a profile picture."
+        }
+      ]
     ],
     "updates": {
       "enabled": false,
